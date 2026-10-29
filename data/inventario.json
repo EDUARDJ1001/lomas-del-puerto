@@ -1,0 +1,320 @@
+{
+  "A-1": {
+    "estado": "vendido",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-2": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-3": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-4": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-5": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-6": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-7": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-8": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-9": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-10": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-11": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-12": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-13": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-14": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-15": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-16": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-17": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "A-18": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-1": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-2": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-3": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-4": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-5": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-6": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-7": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-8": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-9": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-10": {
+    "estado": "vendido",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-11": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-12": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-13": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-14": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-15": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-16": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-17": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-18": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-19": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-20": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "B-21": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-1": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-2": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-3": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-4": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-5": {
+    "estado": "vendido",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-6": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-7": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-8": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-9": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-10": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-11": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-12": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-13": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  },
+  "C-14": {
+    "estado": "disponible",
+    "precio": null,
+    "descripcion": "",
+    "fotos": []
+  }
+}

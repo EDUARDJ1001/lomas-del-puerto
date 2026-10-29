@@ -1,0 +1,84 @@
+:root {
+  --page: #dfe1e4;
+  --surface: #eef0f1;
+  --ink: #23292b;
+  --muted: #5d6567;
+  --accent: #1e5b3c;      /* verde profundo, acorde a los lotes del mapa */
+  --accent-dark: #164430;
+  --dark: #17221d;
+  --radius: 10px;
+  --gap: 8px;
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--page); -webkit-font-smoothing: antialiased; }
+h1, h2 { font-weight: 500; margin: 0; line-height: 1.08; }
+
+/* Marco: toda la página son paneles con esquinas suaves separados por un margen fino */
+.frame { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
+.panel { border-radius: var(--radius); overflow: hidden; position: relative; }
+.panel-accent { background: var(--accent); color: #fff; }
+.panel-dark { background: var(--dark); color: #fff; }
+
+.eyebrow {
+  margin: 0; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--accent);
+}
+.eyebrow::before { content: "· "; }
+.eyebrow-light { color: rgba(255, 255, 255, .8); }
+
+.btn {
+  display: inline-block; padding: 12px 22px; border-radius: 999px; background: var(--accent); color: #fff;
+  font-size: .74rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; text-decoration: none;
+  transition: background .15s, color .15s;
+}
+.btn:hover { background: var(--accent-dark); }
+.btn-light { background: #fff; color: var(--accent); }
+.btn-light:hover { background: var(--surface); }
+
+/* Hero */
+.hero {
+  min-height: calc(100svh - var(--gap) * 2); display: flex; align-items: center; justify-content: center;
+  padding: 96px 20px; text-align: center; color: #fff;
+  background: linear-gradient(170deg, #6f8a86 0%, #3c5852 50%, #22362f 100%);
+}
+.hero-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-media.missing { display: none; }
+.hero-shade { position: absolute; inset: 0; background: rgba(10, 20, 16, .32); }
+.logo {
+  position: absolute; top: 24px; left: 28px; z-index: 2; color: #fff; text-decoration: none;
+  font-weight: 600; font-size: 1rem; letter-spacing: -.01em;
+}
+.hero-content { position: relative; max-width: 760px; display: flex; flex-direction: column; align-items: center; }
+.hero h1 { font-size: clamp(2.5rem, 7vw, 5rem); letter-spacing: -.045em; }
+.hero p { margin: 18px 0 30px; font-size: clamp(1rem, 2vw, 1.15rem); font-weight: 300; opacity: .95; max-width: 36ch; }
+
+/* Bloques bajo el hero */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.zone, .facts { padding: 28px; min-height: 260px; display: flex; flex-direction: column; }
+.zone-text { margin: auto 0 0; font-size: clamp(1.4rem, 2.6vw, 2.1rem); font-weight: 500; letter-spacing: -.03em; line-height: 1.15; max-width: 20ch; }
+.facts dl { margin: auto 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.facts dt { font-size: .75rem; opacity: .65; }
+.facts dd { margin: 6px 0 0; font-size: clamp(1.4rem, 2.6vw, 2.1rem); font-weight: 500; letter-spacing: -.03em; }
+
+/* Cómo llegar: texto y mapa en la misma fila */
+.panel-light { background: var(--surface); }
+.route-text { padding: 28px; min-height: 480px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px; }
+.route-text h2 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.04em; color: var(--accent); max-width: 12ch; }
+.intro { margin: 16px 0 26px; line-height: 1.55; color: var(--muted); }
+.route-map { width: 100%; height: 100%; min-height: 480px; border: 0; display: block; background: var(--surface); }
+
+.footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 22px 28px; font-size: .8rem; }
+.footer span:last-child { opacity: .6; }
+
+@media (max-width: 760px) {
+  .duo { grid-template-columns: 1fr; }
+  .zone, .facts { min-height: 200px; padding: 24px; }
+  .facts dl { grid-template-columns: 1fr 1fr; }
+  .route-text { min-height: 0; padding: 24px; }
+  .route-map { min-height: 360px; }
+  .logo { left: 20px; top: 20px; }
+}

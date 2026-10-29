@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lomas del Puerto · Oportunidad de inversión en Puerto Cortés</title>
+  <meta name="description" content="Lotes residenciales en Barrio Lomas del Puerto, Puerto Cortés. Cerca de hospitales, colegios, gimnasio y playa municipal.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+  <main class="frame">
+
+    <!-- Hero: toma de dron. Coloca el video en media/hero.mp4 y una imagen fija en media/hero.jpg -->
+    <section class="hero panel">
+      <video class="hero-media" autoplay muted loop playsinline poster="media/hero.jpg">
+        <source src="media/hero.mp4" type="video/mp4">
+      </video>
+      <div class="hero-shade"></div>
+      <a href="./" class="logo">Lomas del Puerto</a>
+      <div class="hero-content">
+        <h1>Oportunidad de inversión</h1>
+        <p>Lotes residenciales en Barrio Lomas del Puerto, Puerto Cortés.</p>
+        <a href="mapa.html" class="btn btn-light">Ver lotes disponibles</a>
+      </div>
+    </section>
+
+    <div class="duo">
+      <section class="panel panel-accent zone">
+        <p class="eyebrow eyebrow-light">La zona</p>
+        <p class="zone-text">Cerca de hospitales, colegios, gimnasio y la playa municipal.</p>
+      </section>
+      <section class="panel panel-dark facts">
+        <dl>
+          <div><dt>Lotes disponibles</dt><dd id="stat-disponibles">53</dd></div>
+          <div><dt>Desde</dt><dd>170 m²</dd></div>
+          <div><dt>Área total</dt><dd>17,292 m²</dd></div>
+        </dl>
+      </section>
+    </div>
+
+    <section class="duo route" id="ubicacion">
+      <div class="panel panel-light route-text">
+        <p class="eyebrow">Cómo llegar</p>
+        <div>
+          <h2>Barrio Lomas del Puerto</h2>
+          <p class="intro">Puerto Cortés, Honduras<br>15.811090, −87.926862</p>
+          <a class="btn" id="btn-ruta" target="_blank" rel="noopener">Abrir ruta en Google Maps</a>
+        </div>
+      </div>
+      <iframe class="panel route-map" id="mapa-google" title="Ubicación en Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </section>
+
+    <footer class="panel panel-dark footer">
+      <span>Lomas del Puerto</span>
+      <span>Puerto Cortés, Honduras</span>
+    </footer>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/landing.js"></script>
+</body>
+</html>

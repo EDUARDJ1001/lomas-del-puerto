@@ -1,0 +1,12 @@
+# Archivos base del terreno (plano, matrícula, clave catastral, propietario): no se publican
+pdfdata/
+*.pdf
+*.dwg
+*.dxf
+*.bak
+*.dwl
+*.dwl2
+
+# Sistema
+.DS_Store
+Thumbs.db

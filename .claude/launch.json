@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "solares-web", "runtimeExecutable": "node", "runtimeArgs": ["tools/serve.mjs"], "port": 5180 }
+  ]
+}
