@@ -1,6 +1,6 @@
 {
   "A-1": {
-    "estado": "vendido",
+    "estado": "disponible",
     "precio": null,
     "descripcion": "",
     "fotos": []
@@ -162,7 +162,7 @@
     "fotos": []
   },
   "B-10": {
-    "estado": "vendido",
+    "estado": "disponible",
     "precio": null,
     "descripcion": "",
     "fotos": []
@@ -258,7 +258,7 @@
     "fotos": []
   },
   "C-5": {
-    "estado": "vendido",
+    "estado": "disponible",
     "precio": null,
     "descripcion": "",
     "fotos": []
