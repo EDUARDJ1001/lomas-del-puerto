@@ -7,11 +7,13 @@ import os from 'node:os';
 const root = path.resolve(import.meta.dirname, '..');
 const port = Number(process.env.PORT) || 5180;
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json',
-  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml',
+  '.mp4': 'video/mp4' };
 
 http.createServer((req, res) => {
   const url = decodeURIComponent(req.url.split('?')[0]);
-  const file = path.join(root, url === '/' ? 'index.html' : url);
+  // Direcciones limpias como en Vercel (cleanUrls): /mapa -> mapa.html
+  const file = path.join(root, url === '/' ? 'index.html' : path.extname(url) ? url : `${url}.html`);
   if (!file.startsWith(root)) return res.writeHead(403).end();
   fs.readFile(file, (err, data) => {
     if (err) return res.writeHead(404).end('No encontrado');

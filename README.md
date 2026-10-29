@@ -11,7 +11,12 @@ node tools/serve.mjs
 Abrir http://localhost:5180 (el servidor también muestra la dirección para verlo desde el celular en la misma red).
 
 - `index.html`: landing ("Oportunidad de inversión").
-- `mapa.html`: mapa interactivo de lotes.
+- `mapa.html`: mapa interactivo de lotes (publicado como `/mapa`).
+
+## Despliegue — Vercel
+
+Sitio estático, sin build: en Vercel, *Framework Preset* "Other", sin *Build Command* y con la raíz como *Output Directory*.
+Cada push a `main` se publica solo. `vercel.json` activa las direcciones limpias y la caché; `.vercelignore` deja fuera `tools/` y `.claude/`.
 
 ## Videos del landing — carpeta `media/`
 

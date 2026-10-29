@@ -1,0 +1,4 @@
+# Solo se publica el sitio; herramientas y configuración local quedan fuera
+tools/
+.claude/
+README.md
