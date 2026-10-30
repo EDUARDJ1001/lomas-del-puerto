@@ -37,6 +37,18 @@ async function init() {
   setView({ ...home });
   setupPanZoom();
   setupPanel();
+  abrirDesdeUrl();
+}
+
+// /mapa?lote=A-1 (enlace compartido por WhatsApp): acerca el mapa a ese lote y abre su ficha
+function abrirDesdeUrl() {
+  const id = new URLSearchParams(location.search).get('lote')?.toUpperCase();
+  const l = lotes.find(x => x.id === id);
+  if (!l) return;
+  const [cx, cy] = centroid(l.poligono);
+  const w = home.w / 2.5, h = home.h / 2.5;
+  setView({ x: cx - w / 2, y: -cy - h / 2, w, h });
+  if (l.disponible) openPanel(l);
 }
 
 function drawBase(base) {
@@ -87,13 +99,14 @@ function drawLegend() {
 
 function setupPanel() {
   document.getElementById('panel-close').addEventListener('click', closePanel);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox() || closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('modal-contacto').open) closeLightbox() || closePanel(); });
   const lb = document.getElementById('lightbox');
   lb.querySelector('.lb-close').addEventListener('click', closeLightbox);
   lb.querySelector('.lb-prev').addEventListener('click', () => stepLightbox(-1));
   lb.querySelector('.lb-next').addEventListener('click', () => stepLightbox(1));
   lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
   setupTouch();
+  setupContacto();
 }
 
 function openPanel(l) {
@@ -114,16 +127,56 @@ function openPanel(l) {
   document.getElementById('p-precio').textContent = l.precio ? `${CONFIG.moneda} ${fmt(l.precio, 0)}` : 'A consultar';
   document.getElementById('p-desc').textContent = l.descripcion || '';
 
+  // WhatsApp: el enlace /lote/A-1 muestra en el chat una miniatura del plano con ese lote marcado (og/A-1.png)
   const cta = document.getElementById('p-cta');
   cta.hidden = !CONFIG.whatsapp;
   if (CONFIG.whatsapp) {
-    const msg = `Hola, me interesa el lote ${l.numero} del bloque ${l.bloque} en Lomas del Puerto (${fmt(l.area_m2)} m²).`;
+    const msg = `Hola, estoy interesado en el lote ${l.id} (bloque ${l.bloque}, lote ${l.numero}, ${fmt(l.area_m2)} m²) de Lomas del Puerto. ¿Me pueden dar más información?
+
+${location.origin}/lote/${l.id}`;
     cta.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
   }
 
+  prepararContacto(l);
   renderGallery(l);
   panel.hidden = false;
   panel.scrollTop = 0;
+}
+
+// Formulario de solicitud: el mensaje se rellena con el lote abierto, salvo que la persona ya lo haya escrito a su manera
+let mensajeAuto = '';
+function prepararContacto(l) {
+  const form = document.getElementById('contacto');
+  const nuevo = `Me interesa el lote ${l.numero} del bloque ${l.bloque}.`;
+  if (!form.mensaje.value.trim() || form.mensaje.value === mensajeAuto) form.mensaje.value = nuevo;
+  mensajeAuto = nuevo;
+  document.getElementById('modal-lote').textContent = `Lote ${l.id} · ${fmt(l.area_m2)} m²`;
+  document.getElementById('contacto-status').hidden = true;
+  form.querySelectorAll('.invalid').forEach(c => c.classList.remove('invalid'));
+}
+
+function setupContacto() {
+  const form = document.getElementById('contacto');
+  const status = document.getElementById('contacto-status');
+  const modal = document.getElementById('modal-contacto');
+  document.getElementById('p-info').addEventListener('click', () => modal.showModal());
+  document.getElementById('modal-close').addEventListener('click', () => modal.close());
+  modal.addEventListener('click', e => { if (e.target === modal) modal.close(); }); // clic fuera del formulario
+  form.addEventListener('input', e => e.target.closest('label')?.classList.remove('invalid'));
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const malos = [...form.elements].filter(c => c.willValidate && !c.checkValidity());
+    form.querySelectorAll('label').forEach(lb => lb.classList.toggle('invalid', malos.some(c => lb.contains(c))));
+    status.classList.toggle('error', malos.length > 0);
+    if (malos.length) {
+      status.textContent = 'Revisa los campos marcados: nombre, celular y mensaje son obligatorios.';
+      malos[0].focus();
+    } else {
+      // Pendiente: guardar la solicitud (Supabase) o enviarla por correo/WhatsApp
+      status.textContent = 'Formulario de prueba: la solicitud todavía no se envía.';
+    }
+    status.hidden = false;
+  });
 }
 
 function closePanel() {

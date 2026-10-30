@@ -82,6 +82,19 @@ Al entrar con una cuenta de administrador se puede:
 Las fotos se reducen a 1600 px antes de subirse y quedan en el bucket `fotos` (`A-7/…jpg`). Los cambios se ven en el mapa al recargar, sin hacer push.
 La geometría sigue en `data/lotes.json`.
 
+## Compartir un lote — `/lote/A-1`
+
+El botón **Contáctame** abre WhatsApp con un mensaje que incluye el enlace `/lote/A-1`.
+
+Ese enlace muestra en el chat una miniatura del plano con el lote marcado (`og/A-1.png`) y, al abrirlo, lleva a `/mapa?lote=A-1` con el lote seleccionado.
+En Vercel lo atiende la función `api/lote.mjs`, mediante el rewrite de `vercel.json`.
+
+Si cambia la geometría, las miniaturas se regeneran con Chrome o Edge (tarda unos 3 minutos):
+
+```bash
+node tools/og-lotes.mjs
+```
+
 ## Regenerar la geometría desde el plano
 
 `data/lotes.json` y `data/plano-base.json` salen de `pdfdata/pdfimport.dxf` (PDFIMPORT del plano en AutoCAD). La carpeta `pdfdata/` no se sube al repositorio porque contiene datos del terreno:

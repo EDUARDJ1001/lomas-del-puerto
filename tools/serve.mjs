@@ -3,6 +3,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import lote from '../api/lote.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const port = Number(process.env.PORT) || 5180;
@@ -12,6 +13,7 @@ const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascrip
 
 http.createServer((req, res) => {
   const url = decodeURIComponent(req.url.split('?')[0]);
+  if (url.startsWith('/lote/')) return lote(req, res); // en Vercel: rewrite de vercel.json a la función api/lote.mjs
   // Direcciones limpias como en Vercel (cleanUrls): /mapa -> mapa.html
   const file = path.join(root, url === '/' ? 'index.html' : path.extname(url) ? url : `${url}.html`);
   if (!file.startsWith(root)) return res.writeHead(403).end();
