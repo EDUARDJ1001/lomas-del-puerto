@@ -51,6 +51,37 @@ Cada lote se identifica como `BLOQUE-NÚMERO` (por ejemplo `A-7`):
 - `medidas`: opcional. Si no se pone, se muestran las medidas calculadas del plano (solo en lotes de 4 lados).
 - `fotos`: rutas dentro de la carpeta `fotos/`. La primera es la portada.
 
+## Base de datos — Supabase (opcional)
+
+Mientras `supabase` esté vacío en `js/config.js`, el sitio usa `data/inventario.json`. Para pasar el inventario a Supabase:
+
+1. **SQL Editor → New query**: pegar y ejecutar `supabase/schema.sql`. Crea:
+   - la tabla `lotes`;
+   - la tabla `administradores`;
+   - los permisos;
+   - el bucket público `fotos`.
+2. Ejecutar `supabase/seed.sql` (los 53 lotes). Se regenera con `node tools/seed-supabase.mjs` si cambia `data/inventario.json`.
+3. **Authentication → Sign In / Providers**: desactivar *Allow new users to sign up*.
+4. **Authentication → Users → Add user → Create new user**: crear la cuenta con correo y contraseña, y marcar *Auto Confirm User*. Después darle permiso de edición en el SQL Editor:
+   ```sql
+   insert into public.administradores (user_id, email)
+   select id, email from auth.users where email = 'correo@ejemplo.com';
+   ```
+5. **Project Settings → API**: copiar la *Project URL* y la clave pública *anon* (o *publishable*) en `js/config.js`. Esa clave es pública por diseño. La *service_role* o *secret* nunca va en el sitio.
+
+Las contraseñas las guarda Supabase Auth, cifradas, en `auth.users`. La tabla `administradores` solo indica qué cuentas pueden editar.
+
+### Panel de administración — `/admin`
+
+Al entrar con una cuenta de administrador se puede:
+
+- cambiar el estado de cada lote (se guarda al momento);
+- editar precio, medidas y descripción;
+- subir, ordenar y borrar fotos.
+
+Las fotos se reducen a 1600 px antes de subirse y quedan en el bucket `fotos` (`A-7/…jpg`). Los cambios se ven en el mapa al recargar, sin hacer push.
+La geometría sigue en `data/lotes.json`.
+
 ## Regenerar la geometría desde el plano
 
 `data/lotes.json` y `data/plano-base.json` salen de `pdfdata/pdfimport.dxf` (PDFIMPORT del plano en AutoCAD). La carpeta `pdfdata/` no se sube al repositorio porque contiene datos del terreno:

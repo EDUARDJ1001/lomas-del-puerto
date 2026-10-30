@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administración · Lomas del Puerto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <header class="bar">
+    <a href="./" class="logo">Lomas del Puerto</a>
+    <span class="bar-title">Administración</span>
+    <button class="link" id="btn-salir" hidden>Cerrar sesión</button>
+  </header>
+
+  <main>
+    <!-- Sin Supabase configurado en js/config.js -->
+    <section class="notice" id="sin-config" hidden>
+      <h1>Falta conectar Supabase</h1>
+      <p>Completa <code>supabase.url</code> y <code>supabase.anonKey</code> en <code>js/config.js</code>.</p>
+    </section>
+
+    <form class="login" id="login" hidden>
+      <h1>Iniciar sesión</h1>
+      <label>Correo <input type="email" name="email" autocomplete="username" required></label>
+      <label>Contraseña <input type="password" name="password" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Entrar</button>
+      <p class="error" id="login-error" hidden></p>
+    </form>
+
+    <section class="notice" id="sin-permiso" hidden>
+      <h1>Sin permiso de edición</h1>
+      <p>Esta cuenta no está registrada como administrador.</p>
+    </section>
+
+    <section id="editor" hidden>
+      <div class="toolbar">
+        <div class="filters" id="filtros">
+          <button class="chip active" data-bloque="">Todos</button>
+          <button class="chip" data-bloque="A">Bloque A</button>
+          <button class="chip" data-bloque="B">Bloque B</button>
+          <button class="chip" data-bloque="C">Bloque C</button>
+        </div>
+        <p class="resumen" id="resumen"></p>
+      </div>
+      <ul class="lotes" id="lotes"></ul>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <template id="tpl-lote">
+    <li class="lote">
+      <div class="lote-head">
+        <button class="lote-toggle" type="button" aria-expanded="false">
+          <strong class="lote-id"></strong>
+          <span class="lote-area"></span>
+        </button>
+        <select class="estado" aria-label="Estado">
+          <option value="disponible">Disponible</option>
+          <option value="reservado">Reservado</option>
+          <option value="vendido">Vendido</option>
+        </select>
+      </div>
+      <form class="lote-body" hidden>
+        <label><span>Precio (<span class="moneda"></span>)</span> <input name="precio" type="number" min="0" step="0.01" inputmode="decimal" placeholder="A consultar"></label>
+        <label>Medidas <input name="medidas" placeholder="Calculadas del plano"></label>
+        <label class="full">Descripción <textarea name="descripcion" rows="3"></textarea></label>
+        <div class="full">
+          <p class="label">Fotos <small>(la primera es la portada)</small></p>
+          <div class="fotos"></div>
+          <label class="btn btn-outline subir">Subir fotos<input type="file" accept="image/*" multiple hidden></label>
+        </div>
+        <button class="btn full" type="submit">Guardar cambios</button>
+      </form>
+    </li>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

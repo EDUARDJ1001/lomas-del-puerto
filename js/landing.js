@@ -4,7 +4,7 @@ const { lat, lng } = window.SITIO.coordenadas;
 document.getElementById('mapa-google').src = `https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
 document.getElementById('btn-ruta').href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-fetch('data/inventario.json').then(r => r.json()).then(inv => {
+window.cargarInventario().then(inv => {
   document.getElementById('stat-disponibles').textContent =
     Object.values(inv).filter(l => l.estado === 'disponible').length;
 }).catch(() => {});

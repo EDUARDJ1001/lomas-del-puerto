@@ -1,5 +1,5 @@
 // Mapa interactivo de lotes — Lomas del Puerto
-// Datos: data/lotes.json (geometría, generado desde el plano), data/inventario.json (estado, precio, fotos; editable a mano)
+// Datos: data/lotes.json (geometría, generado desde el plano) + inventario (estado, precio, fotos) desde Supabase o data/inventario.json
 
 const CONFIG = window.SITIO; // js/config.js
 
@@ -23,9 +23,10 @@ let lotes = [], selected = null, view = null, home = null;
 init();
 
 async function init() {
-  const [geo, base, inv] = await Promise.all(
-    ['data/lotes.json', 'data/plano-base.json', 'data/inventario.json'].map(u => fetch(u).then(r => r.json())),
-  );
+  const [geo, base, inv] = await Promise.all([
+    ...['data/lotes.json', 'data/plano-base.json'].map(u => fetch(u).then(r => r.json())),
+    window.cargarInventario(), // js/inventario.js
+  ]);
   lotes = geo.map(l => ({ ...l, ...(inv[l.id] || { estado: 'disponible', fotos: [] }) }));
   lotes.forEach(l => { l.disponible = l.estado === 'disponible'; });
 
