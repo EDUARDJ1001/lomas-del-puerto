@@ -1,41 +1,41 @@
 // Mapa interactivo de lotes — Lomas del Puerto
 // Datos: data/lotes.json (geometría, generado desde el plano) + inventario (estado, precio, fotos) desde Supabase o data/inventario.json
+// El plano (en metros) se dibuja con Leaflet sobre un mapa real con relieve y calles, ubicado según SITIO.plano
 
 const CONFIG = window.SITIO; // js/config.js
 
-const NS = 'http://www.w3.org/2000/svg';
-const svg = document.getElementById('map');
 const tooltip = document.getElementById('tooltip');
 const panel = document.getElementById('panel');
+const wrap = document.querySelector('.map-wrap');
 
 const fmt = (n, d = 2) => n.toLocaleString('es-HN', { minimumFractionDigits: d, maximumFractionDigits: d });
-const el = (tag, attrs = {}, parent) => {
-  const n = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
-  if (parent) parent.appendChild(n);
-  return n;
-};
-// El plano usa Y hacia arriba; SVG hacia abajo
-const pt = ([x, y]) => `${x},${-y}`;
 
-let lotes = [], selected = null, view = null, home = null;
+// Metros del plano -> [lat, lng]: giro alrededor de "origen" y traslado a su posición en el mapa
+const GEO = CONFIG.plano;
+const rad = GEO.rotacion * Math.PI / 180, latRad = GEO.lat * Math.PI / 180;
+const M_LAT = 111132.92 - 559.82 * Math.cos(2 * latRad), M_LNG = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+const geo = ([x, y]) => {
+  const dx = x - GEO.origen[0], dy = y - GEO.origen[1];
+  const e = dx * Math.cos(rad) - dy * Math.sin(rad), n = dx * Math.sin(rad) + dy * Math.cos(rad);
+  return [GEO.lat + n / M_LAT, GEO.lng + e / M_LNG];
+};
+
+let lotes = [], selected = null, map = null, home = null;
 
 init();
 
 async function init() {
-  const [geo, base, inv] = await Promise.all([
+  const [geom, base, inv] = await Promise.all([
     ...['data/lotes.json', 'data/plano-base.json'].map(u => fetch(u).then(r => r.json())),
     window.cargarInventario(), // js/inventario.js
   ]);
-  lotes = geo.map(l => ({ ...l, ...(inv[l.id] || { estado: 'disponible', fotos: [] }) }));
+  lotes = geom.map(l => ({ ...l, ...(inv[l.id] || { estado: 'disponible', fotos: [] }) }));
   lotes.forEach(l => { l.disponible = l.estado === 'disponible'; });
 
+  setupMap();
   drawBase(base);
   drawLots();
   drawLegend();
-  home = fitBox();
-  setView({ ...home });
-  setupPanZoom();
   setupPanel();
   abrirDesdeUrl();
 }
@@ -45,47 +45,107 @@ function abrirDesdeUrl() {
   const id = new URLSearchParams(location.search).get('lote')?.toUpperCase();
   const l = lotes.find(x => x.id === id);
   if (!l) return;
-  const [cx, cy] = centroid(l.poligono);
-  const w = home.w / 2.5, h = home.h / 2.5;
-  setView({ x: cx - w / 2, y: -cy - h / 2, w, h });
+  map.setView(geo(centroid(l.poligono)), 19.5, { animate: false });
   if (l.disponible) openPanel(l);
 }
 
+// ---------- Mapa base ----------
+
+function setupMap() {
+  // Solo se carga el entorno del proyecto: no se puede alejar ni mover más allá de radioMapaKm
+  const km = (CONFIG.radioMapaKm || 5) * 1000;
+  const limite = L.latLngBounds([GEO.lat - km / M_LAT, GEO.lng - km / M_LNG], [GEO.lat + km / M_LAT, GEO.lng + km / M_LNG]);
+  map = L.map('map', {
+    zoomControl: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 90,
+    minZoom: 13, maxZoom: 20, maxBounds: limite, maxBoundsViscosity: 1,
+  });
+  map.attributionControl.setPrefix(false);
+
+  const capas = {
+    relieve: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc', maxNativeZoom: 17, maxZoom: 20, bounds: limite,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, SRTM · estilo © <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
+    }),
+    // Esri no tiene imagen más allá del zoom 18 en esta zona: de ahí en adelante se amplía esa misma
+    satelite: L.layerGroup([
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxNativeZoom: 18, maxZoom: 20, bounds: limite, attribution: 'Imágenes © Esri, Maxar, Earthstar Geographics',
+      }),
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+        maxNativeZoom: 18, maxZoom: 20, bounds: limite,
+      }),
+    ]),
+  };
+  let actual = capas.relieve.addTo(map);
+  document.querySelector('.map-layers').addEventListener('click', e => {
+    const b = e.target.closest('[data-capa]');
+    if (!b || capas[b.dataset.capa] === actual) return;
+    map.removeLayer(actual);
+    actual = capas[b.dataset.capa].addTo(map);
+    document.querySelectorAll('.map-layers button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
+
+  home = L.latLngBounds(lotes.flatMap(l => l.poligono.map(geo)));
+  // Pin del proyecto, visible solo con el mapa alejado; al tocarlo se vuelve a ver el plano completo
+  L.marker(home.getCenter(), {
+    icon: L.divIcon({ className: 'proyecto-pin', html: '<span>Lomas del Puerto</span>', iconSize: null }), keyboard: false,
+  }).on('click', () => map.flyToBounds(home, { padding: [24, 24], duration: .8 })).addTo(map);
+  map.fitBounds(home, { padding: [24, 24], animate: false });
+
+  // Calles y textos del plano se dibujan en metros: --m = píxeles por metro en el zoom actual
+  const escala = () => {
+    const m = 2 ** map.getZoom() / (156543.03 * Math.cos(latRad));
+    wrap.style.setProperty('--m', m);
+    wrap.classList.toggle('sin-etiquetas', m < 3.4); // los números de lote solo se muestran cuando ya se leen
+    wrap.classList.toggle('lejos', m < .35); // alejado, el plano mide pocos píxeles: se marca con un pin
+  };
+  map.on('zoomend', escala);
+  escala();
+
+  map.on('movestart', hideTip);
+  // Alejado al máximo, el área permitida llena la pantalla; el panel de detalles cambia el ancho del mapa
+  const ajustar = () => { map.invalidateSize(); map.setMinZoom(Math.max(12, map.getBoundsZoom(limite, true))); };
+  new ResizeObserver(ajustar).observe(map.getContainer());
+  ajustar();
+  document.querySelector('.map-tools').addEventListener('click', e => {
+    const z = e.target.dataset.zoom;
+    if (z === 'fit') map.flyToBounds(home, { padding: [24, 24], duration: .6 });
+    else if (z) map[z === 'in' ? 'zoomIn' : 'zoomOut'](1);
+  });
+}
+
 function drawBase(base) {
-  const g = el('g', { class: 'base' }, svg);
-  for (const line of base.lineas) el('polyline', { class: 'base-line', points: line.map(pt).join(' ') }, g);
+  const fijo = { interactive: false, smoothFactor: 0 };
+  for (const line of base.lineas) L.polyline(line.map(geo), { ...fijo, className: 'base-line' }).addTo(map);
   const { superficies, bordes, ejes } = base.calles;
-  const path = segs => segs.map(([a, b]) => `M${pt(a)}L${pt(b)}`).join('');
-  for (const s of superficies) el('polygon', { class: 'street', points: s.map(pt).join(' ') }, g);
-  el('path', { class: 'street-edge', d: path(bordes) }, g);
-  el('path', { class: 'street-center', d: path(ejes) }, g);
-  for (const t of base.textos) {
-    const [x, y] = t.p;
-    const txt = el('text', {
-      class: 'street-label', x, y: -y, 'dominant-baseline': 'hanging',
-      transform: `rotate(${-t.angulo} ${x} ${-y})`,
-    }, g);
-    txt.textContent = t.texto;
-  }
+  const segs = s => s.map(([a, b]) => [geo(a), geo(b)]);
+  for (const s of superficies) L.polygon(s.map(geo), { ...fijo, className: 'street' }).addTo(map);
+  L.polyline(segs(bordes), { ...fijo, className: 'street-edge' }).addTo(map);
+  L.polyline(segs(ejes), { ...fijo, className: 'street-center' }).addTo(map);
+  // El texto gira junto con el plano (CSS gira en sentido horario, el plano en antihorario)
+  for (const t of base.textos) etiqueta(t.p, `<span style="--giro: ${-(t.angulo + GEO.rotacion)}deg">${t.texto}</span>`, 'street-label');
 }
 
 function drawLots() {
-  const g = el('g', { class: 'lots' }, svg);
   for (const l of lotes) {
     const cls = l.disponible ? 'available' : 'sold';
-    l.node = el('polygon', { class: `lot ${cls}`, points: l.poligono.map(pt).join(' ') }, g);
+    const capa = L.polygon(l.poligono.map(geo), { className: `lot ${cls}`, interactive: l.disponible, smoothFactor: 0 }).addTo(map);
+    l.node = capa.getElement();
     if (l.disponible) {
       l.node.setAttribute('tabindex', '0');
       l.node.setAttribute('role', 'button');
       l.node.setAttribute('aria-label', `Lote ${l.id}, ${fmt(l.area_m2)} m², disponible`);
       l.node.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel(l); } });
-      l.node.addEventListener('pointerenter', e => showTip(l, e));
-      l.node.addEventListener('pointermove', e => showTip(l, e));
-      l.node.addEventListener('pointerleave', hideTip);
+      capa.on('click', () => openPanel(l));
+      capa.on('mouseover mousemove', e => showTip(l, e.originalEvent));
+      capa.on('mouseout', hideTip);
     }
-    const [cx, cy] = centroid(l.poligono);
-    el('text', { class: `lot-label ${cls}`, x: cx, y: -cy }, g).textContent = l.id;
+    etiqueta(centroid(l.poligono), `<span>${l.id}</span>`, `lot-label ${cls}`);
   }
+}
+
+function etiqueta(p, html, className) {
+  L.marker(geo(p), { icon: L.divIcon({ className, html, iconSize: null }), interactive: false, keyboard: false }).addTo(map);
 }
 
 function drawLegend() {
@@ -280,103 +340,13 @@ function setupTouch() {
 // ---------- Tooltip ----------
 
 function showTip(l, e) {
-  const r = svg.getBoundingClientRect();
+  const r = wrap.getBoundingClientRect();
   tooltip.textContent = `Lote ${l.id} · ${fmt(l.area_m2)} m²`;
   tooltip.style.left = `${e.clientX - r.left}px`;
   tooltip.style.top = `${e.clientY - r.top}px`;
   tooltip.hidden = false;
 }
 function hideTip() { tooltip.hidden = true; }
-
-// ---------- Pan / zoom (sobre el viewBox) ----------
-
-function fitBox() {
-  const pts = lotes.flatMap(l => l.poligono);
-  const xs = pts.map(p => p[0]), ys = pts.map(p => -p[1]);
-  const pad = 8;
-  const x = Math.min(...xs) - pad, y = Math.min(...ys) - pad;
-  return { x, y, w: Math.max(...xs) + pad - x, h: Math.max(...ys) + pad - y };
-}
-
-function setView(v) {
-  view = v;
-  svg.setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`);
-}
-
-// Convierte coordenadas de pantalla a coordenadas del viewBox (respetando preserveAspectRatio meet)
-function toSvg(clientX, clientY) {
-  const p = new DOMPoint(clientX, clientY).matrixTransform(svg.getScreenCTM().inverse());
-  return [p.x, p.y];
-}
-
-function zoomAt(factor, clientX, clientY) {
-  const w = view.w / factor;
-  if (w < 15 || w > home.w * 2.5) return;
-  const [px, py] = toSvg(clientX, clientY);
-  setView({ x: px - (px - view.x) / factor, y: py - (py - view.y) / factor, w, h: view.h / factor });
-}
-
-function setupPanZoom() {
-  svg.addEventListener('wheel', e => {
-    e.preventDefault();
-    zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY);
-  }, { passive: false });
-
-  const pointers = new Map();
-  let moved = 0, pinchDist = 0, downTarget = null;
-
-  svg.addEventListener('pointerdown', e => {
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    svg.setPointerCapture(e.pointerId);
-    if (pointers.size === 1) { moved = 0; downTarget = e.target; }
-    if (pointers.size === 2) pinchDist = dist(...pointers.values());
-  });
-
-  svg.addEventListener('pointermove', e => {
-    const prev = pointers.get(e.pointerId);
-    if (!prev) return;
-    const cur = { x: e.clientX, y: e.clientY };
-    if (pointers.size === 1) {
-      moved += Math.abs(cur.x - prev.x) + Math.abs(cur.y - prev.y);
-      if (moved > 6) {
-        svg.classList.add('dragging');
-        hideTip();
-        const [ax, ay] = toSvg(prev.x, prev.y), [bx, by] = toSvg(cur.x, cur.y);
-        setView({ ...view, x: view.x - (bx - ax), y: view.y - (by - ay) });
-      }
-    }
-    pointers.set(e.pointerId, cur);
-    if (pointers.size === 2) {
-      moved = Infinity;
-      const [a, b] = [...pointers.values()], d = dist(a, b);
-      if (pinchDist) zoomAt(d / pinchDist, (a.x + b.x) / 2, (a.y + b.y) / 2);
-      pinchDist = d;
-    }
-  });
-
-  const end = e => {
-    if (!pointers.has(e.pointerId)) return;
-    pointers.delete(e.pointerId);
-    if (pointers.size === 0) {
-      svg.classList.remove('dragging');
-      if (moved <= 6 && e.type === 'pointerup') {
-        const lot = lotes.find(l => l.node === downTarget);
-        if (lot?.disponible) openPanel(lot);
-      }
-    }
-    if (pointers.size < 2) pinchDist = 0;
-  };
-  svg.addEventListener('pointerup', end);
-  svg.addEventListener('pointercancel', end);
-
-  document.querySelector('.map-tools').addEventListener('click', e => {
-    const z = e.target.dataset.zoom;
-    if (!z) return;
-    const r = svg.getBoundingClientRect();
-    if (z === 'fit') setView({ ...home });
-    else zoomAt(z === 'in' ? 1.4 : 1 / 1.4, r.left + r.width / 2, r.top + r.height / 2);
-  });
-}
 
 // ---------- Geometría ----------
 
@@ -388,5 +358,3 @@ function centroid(p) {
   }
   return [cx / (3 * a), cy / (3 * a)];
 }
-
-function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }

@@ -33,6 +33,19 @@ Los originales están en `videos/`, que no se sube al repositorio porque el mast
 
 Número de WhatsApp (activa el botón "Me interesa este lote" en el mapa), moneda y coordenadas de la ubicación.
 
+### Plano sobre el mapa
+
+`mapa.html` dibuja el plano con [Leaflet](https://leafletjs.com) encima de un mapa real. Hay dos fondos: **Relieve** (OpenTopoMap: curvas de nivel, sombreado y calles de OpenStreetMap) y **Satélite** (Esri World Imagery con las calles de Esri encima). Los mosaicos del mapa se piden solo dentro de `radioMapaKm` (5 km) alrededor del proyecto, y el mapa no deja alejarse ni moverse fuera de ese radio.
+
+`plano` dice dónde va el plano. Está ajustado *a mano*, a escala real, para que su lado suroeste corra junto a la calle existente sin taparla:
+
+```js
+plano: { origen: [193.83, 179.34], lat: 15.812103, lng: -87.926960, rotacion: 86.8 },
+```
+
+- `lat` / `lng`: dónde cae el centro del plano. Para moverlo, 0.00001° son unos 1.1 m (en `lat` hacia el norte, en `lng` hacia el este).
+- `rotacion`: grados de giro en sentido antihorario.
+
 ## Editar lotes — `data/inventario.json`
 
 Cada lote se identifica como `BLOQUE-NÚMERO` (por ejemplo `A-7`):

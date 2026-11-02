@@ -42,30 +42,58 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 
 .layout { flex: 1; display: flex; min-height: 0; position: relative; }
 
-.map-wrap { flex: 1; position: relative; overflow: hidden; touch-action: none; }
-#map { width: 100%; height: 100%; display: block; cursor: grab; user-select: none; }
-#map.dragging { cursor: grabbing; }
+/* z-index: 0 encierra las capas de Leaflet (z-index 400+) para que la hoja de detalles del celular quede encima */
+.map-wrap { flex: 1; position: relative; overflow: hidden; touch-action: none; z-index: 0; --m: 1; }
+#map { width: 100%; height: 100%; background: #e8e6df; font-family: inherit; }
+.leaflet-container .leaflet-control-attribution { font-size: .62rem; background: rgba(255, 255, 255, .75); }
 
-.base-line { fill: none; stroke: #b9b4a6; stroke-width: .18; vector-effect: non-scaling-stroke; }
-/* Calles: asfalto, bordes más oscuros y línea central amarilla (grosores en metros reales) */
-.street { fill: var(--asphalt); stroke: var(--asphalt); stroke-width: .15; }
-.street-edge { fill: none; stroke: var(--asphalt-edge); stroke-width: .6; stroke-linecap: round; }
-.street-center { fill: none; stroke: var(--road-line); stroke-width: .3; stroke-dasharray: 2.5 1.8; }
-.street-label {
-  fill: #fff; font-size: 2px; letter-spacing: .3px; font-weight: 600;
-  paint-order: stroke; stroke: var(--asphalt); stroke-width: .8; stroke-linejoin: round;
+/* Plano sobre el mapa. --m = píxeles por metro (js/app.js): calles y textos conservan su tamaño real en metros */
+.base-line { fill: none; stroke: #fff; stroke-opacity: .55; stroke-width: 1; }
+.street { fill: var(--asphalt); fill-opacity: .92; stroke: var(--asphalt); stroke-width: calc(var(--m) * .15px); }
+.street-edge { fill: none; stroke: var(--asphalt-edge); stroke-width: calc(var(--m) * .6px); stroke-linecap: round; }
+.street-center { fill: none; stroke: var(--road-line); stroke-width: max(1px, calc(var(--m) * .3px)); stroke-dasharray: calc(var(--m) * 2.5px) calc(var(--m) * 1.8px); }
+.street-label span, .lot-label span {
+  position: absolute; transform: translate(-50%, -50%) rotate(var(--giro, 0deg)); white-space: nowrap;
+  font-weight: 600; line-height: 1; pointer-events: none;
+}
+.street-label span {
+  color: #fff; font-size: max(9px, calc(var(--m) * 2px)); letter-spacing: .05em;
+  text-shadow: 0 0 3px var(--asphalt), 0 0 3px var(--asphalt);
+}
+.lot-label span { color: #fff; font-size: calc(var(--m) * 1.9px); text-shadow: 0 0 2px rgba(0, 0, 0, .35); }
+.lot-label.sold span { color: var(--sold-ink); text-shadow: none; }
+.sin-etiquetas .lot-label, .sin-etiquetas .street-label { display: none; }
+
+.proyecto-pin { display: none; }
+.lejos .proyecto-pin { display: block; }
+.proyecto-pin span {
+  position: absolute; left: 0; bottom: 8px; transform: translateX(-50%); white-space: nowrap; cursor: pointer;
+  background: var(--available-hover); color: #fff; font-size: .75rem; font-weight: 600; padding: 5px 10px;
+  border-radius: 999px; box-shadow: var(--shadow);
+}
+.proyecto-pin span::after {
+  content: ""; position: absolute; left: 50%; top: 100%; margin-left: -6px;
+  border: 6px solid transparent; border-top-color: var(--available-hover);
 }
 
-.lot { stroke: #fff; stroke-width: 1.2; vector-effect: non-scaling-stroke; transition: fill .15s; }
+.lot { stroke: #fff; stroke-width: 1.2; fill-opacity: .82; transition: fill .15s, fill-opacity .15s; }
 .lot.available { fill: var(--available); cursor: pointer; }
-.lot.available:hover, .lot.available:focus { fill: var(--available-hover); outline: none; }
+.lot.available:hover, .lot.available:focus { fill: var(--available-hover); fill-opacity: .95; outline: none; }
 .lot.sold { fill: var(--sold); }
-.lot.selected { fill: var(--selected) !important; }
-.lot-label { font-size: 1.9px; font-weight: 600; text-anchor: middle; dominant-baseline: central; pointer-events: none; fill: #fff; }
-.lot-label.sold { fill: var(--sold-ink); }
+.lot.selected { fill: var(--selected) !important; fill-opacity: .95; }
+
+.map-layers {
+  position: absolute; right: 16px; top: 16px; z-index: 1000; display: flex;
+  background: var(--surface); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden;
+}
+.map-layers button {
+  border: 0; background: none; font: inherit; font-size: .8rem; font-weight: 500; padding: 9px 12px; cursor: pointer; color: var(--muted);
+}
+.map-layers button + button { border-left: 1px solid var(--line); }
+.map-layers button[aria-pressed="true"] { background: var(--available); color: #fff; }
 
 .map-tools {
-  position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column;
+  position: absolute; right: 16px; bottom: 24px; z-index: 1000; display: flex; flex-direction: column;
   background: var(--surface); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden;
 }
 .map-tools button {
@@ -75,14 +103,14 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 .map-tools button:hover { background: var(--bg); }
 
 .north {
-  position: absolute; left: 16px; top: 16px; width: 40px; height: 48px; border-radius: 10px;
+  position: absolute; left: 16px; top: 16px; z-index: 1000; width: 40px; height: 48px; border-radius: 10px;
   background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column-reverse;
   align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; line-height: 1;
 }
 .north span { color: #c0392b; font-size: .9rem; }
 
 .tooltip {
-  position: absolute; pointer-events: none; background: var(--ink); color: #fff; padding: 6px 10px;
+  position: absolute; z-index: 1000; pointer-events: none; background: var(--ink); color: #fff; padding: 6px 10px;
   border-radius: 8px; font-size: .82rem; white-space: nowrap; transform: translate(-50%, calc(-100% - 12px));
 }
 
@@ -211,5 +239,5 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
   .gallery .thumbs { display: none; } /* en el celular se desliza el carrusel; el contador indica la posición */
   .panel-body { padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); }
   .lb-nav { display: none; } /* en el celular se cambia de foto deslizando */
-  .map-tools { bottom: 16px; right: 16px; }
+  .map-tools { bottom: 24px; right: 16px; }
 }
