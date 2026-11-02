@@ -10,3 +10,6 @@ pdfdata/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Videos originales (el master pesa ~270 MB); las versiones web van en media/
+videos/

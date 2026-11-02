@@ -9,7 +9,9 @@ window.cargarInventario().then(inv => {
     Object.values(inv).filter(l => l.estado === 'disponible').length;
 }).catch(() => {});
 
-// Si aún no hay video de portada, se queda el fondo de respaldo (CSS)
+// Si ningún video de portada carga, se queda el fondo de respaldo (CSS); el error llega en el último <source>
 const hero = document.querySelector('.hero-media');
-hero.querySelector('source').addEventListener('error', () => hero.classList.add('missing'));
+hero.querySelector('source:last-of-type').addEventListener('error', () => hero.classList.add('missing'));
 if (hero.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) hero.classList.add('missing'); // falló antes de este script
+// Con "reducir movimiento" activado en el sistema se deja la imagen fija
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) { hero.removeAttribute('autoplay'); hero.pause(); }

@@ -22,11 +22,12 @@ Cada push a `main` se publica solo. `vercel.json` activa las direcciones limpias
 
 | Archivo | Dónde se ve |
 |---|---|
-| `media/hero.mp4` | Fondo de la portada (toma de dron, en bucle y sin sonido) |
-| `media/hero.jpg` | Imagen fija mientras carga el video de portada (opcional) |
+| `media/hero-720.webm`, `media/hero-720.mp4` | Fondo de la portada en celulares (hasta 900 px de ancho) |
+| `media/hero-1080.webm`, `media/hero-1080.mp4` | Fondo de la portada en pantallas grandes |
+| `media/hero.jpg` | Imagen fija mientras carga el video, o si el sistema pide reducir movimiento |
 
-Mientras no exista, se muestra un fondo verde oscuro.
-Para que cargue rápido en el celular conviene exportarlo en 1080p (H.264) y con una duración de unos 10–20 s.
+El navegador usa WebM si lo soporta (pesa menos) y si no, MP4. Si ningún video carga, se muestra un fondo verde oscuro.
+Los originales están en `videos/`, que no se sube al repositorio porque el master pesa unos 270 MB.
 
 ## Configuración — `js/config.js`
 

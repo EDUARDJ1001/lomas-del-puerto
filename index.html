@@ -17,10 +17,13 @@
 <body>
   <main class="frame">
 
-    <!-- Hero: toma de dron. Coloca el video en media/hero.mp4 y una imagen fija en media/hero.jpg -->
+    <!-- Hero: toma de dron (media/). 720p en celular y 1080p en pantallas grandes; WebM pesa menos, MP4 es el respaldo -->
     <section class="hero panel">
-      <video class="hero-media" autoplay muted loop playsinline poster="media/hero.jpg">
-        <source src="media/hero.mp4" type="video/mp4">
+      <video class="hero-media" autoplay muted loop playsinline preload="metadata" poster="media/hero.jpg">
+        <source src="media/hero-720.webm" type="video/webm" media="(max-width: 900px)">
+        <source src="media/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
+        <source src="media/hero-1080.webm" type="video/webm">
+        <source src="media/hero-1080.mp4" type="video/mp4">
       </video>
       <div class="hero-shade"></div>
       <a href="./" class="logo"><img src="img/logo-blanco.png" alt="Lomas del Puerto" width="500" height="300"></a>
