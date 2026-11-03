@@ -128,7 +128,8 @@ function drawBase(base) {
 
 function drawLots() {
   for (const l of lotes) {
-    const cls = l.disponible ? 'available' : 'sold';
+    // Reservado: naranja; vendido (o cualquier otro estado): rojo, con el estado escrito sobre el lote
+    const cls = l.disponible ? 'available' : l.estado === 'reservado' ? 'reserved' : 'sold';
     const capa = L.polygon(l.poligono.map(geo), { className: `lot ${cls}`, interactive: l.disponible, smoothFactor: 0 }).addTo(map);
     l.node = capa.getElement();
     if (l.disponible) {
@@ -140,7 +141,8 @@ function drawLots() {
       capa.on('mouseover mousemove', e => showTip(l, e.originalEvent));
       capa.on('mouseout', hideTip);
     }
-    etiqueta(centroid(l.poligono), `<span>${l.id}</span>`, `lot-label ${cls}`);
+    const estado = { reserved: 'Reservado', sold: 'Vendido' }[cls];
+    etiqueta(centroid(l.poligono), `<span>${l.id}${estado ? `<small>${estado}</small>` : ''}</span>`, `lot-label ${cls}`);
   }
 }
 
@@ -150,9 +152,11 @@ function etiqueta(p, html, className) {
 
 function drawLegend() {
   const libres = lotes.filter(l => l.disponible).length;
+  const reservados = lotes.filter(l => l.estado === 'reservado').length;
   document.getElementById('legend').innerHTML = `
     <li><i style="background:var(--available)"></i>Disponibles <b>${libres}</b></li>
-    <li><i style="background:var(--sold)"></i>No disponibles <b>${lotes.length - libres}</b></li>`;
+    <li><i style="background:var(--reserved)"></i>Reservados <b>${reservados}</b></li>
+    <li><i style="background:var(--sold)"></i>Vendidos <b>${lotes.length - libres - reservados}</b></li>`;
 }
 
 // ---------- Panel de detalles ----------

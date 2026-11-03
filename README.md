@@ -60,7 +60,7 @@ Cada lote se identifica como `BLOQUE-NÚMERO` (por ejemplo `A-7`):
 }
 ```
 
-- `estado`: `disponible` (verde, se puede abrir) o cualquier otro valor como `vendido` o `reservado` (gris, sin acción).
+- `estado`: `disponible` (verde, se puede abrir), `reservado` (naranja, con la palabra "Reservado") o `vendido` (rojo, con la palabra "Vendido"). Los reservados y vendidos no abren ficha.
 - `precio`: número, o `null` para mostrar "A consultar".
 - `medidas`: opcional. Si no se pone, se muestran las medidas calculadas del plano (solo en lotes de 4 lados).
 - `fotos`: rutas dentro de la carpeta `fotos/`. La primera es la portada.

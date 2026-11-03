@@ -9,8 +9,8 @@
   --road-line: #f5c400;
   --available: #3f9f5f;
   --available-hover: #2c7d47;
-  --sold: #c7c9c6;
-  --sold-ink: #8b8f8b;
+  --sold: #d64541;
+  --reserved: #ef8a24;
   --selected: #f2b33d;
   --shadow: 0 10px 30px rgba(20, 30, 25, .14);
   --radius: 14px;
@@ -61,7 +61,9 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
   text-shadow: 0 0 3px var(--asphalt), 0 0 3px var(--asphalt);
 }
 .lot-label span { color: #fff; font-size: calc(var(--m) * 1.9px); text-shadow: 0 0 2px rgba(0, 0, 0, .35); }
-.lot-label.sold span { color: var(--sold-ink); text-shadow: none; }
+.lot-label small {
+  display: block; margin-top: .2em; font-size: .78em; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-align: center;
+}
 .sin-etiquetas .lot-label, .sin-etiquetas .street-label { display: none; }
 
 .proyecto-pin { display: none; }
@@ -79,7 +81,8 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 .lot { stroke: #fff; stroke-width: 1.2; fill-opacity: .82; transition: fill .15s, fill-opacity .15s; }
 .lot.available { fill: var(--available); cursor: pointer; }
 .lot.available:hover, .lot.available:focus { fill: var(--available-hover); fill-opacity: .95; outline: none; }
-.lot.sold { fill: var(--sold); }
+.lot.sold { fill: var(--sold); fill-opacity: .88; }
+.lot.reserved { fill: var(--reserved); fill-opacity: .88; }
 .lot.selected { fill: var(--selected) !important; fill-opacity: .95; }
 
 .map-layers {
