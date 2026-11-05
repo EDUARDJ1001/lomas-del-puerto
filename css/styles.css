@@ -84,6 +84,9 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 .lot.sold { fill: var(--sold); fill-opacity: .88; }
 .lot.reserved { fill: var(--reserved); fill-opacity: .88; }
 .lot.selected { fill: var(--selected) !important; fill-opacity: .95; }
+/* Cotizador en modo combinar: vecinos que se pueden agregar */
+.lot.vecino { fill: #8fd3a5; fill-opacity: .95; stroke: var(--selected); stroke-width: 3; stroke-dasharray: 6 4; }
+.lot.vecino:hover, .lot.vecino:focus { fill: var(--selected); fill-opacity: .7; }
 
 .map-layers {
   position: absolute; right: 16px; top: 16px; z-index: 1000; display: flex;
@@ -167,6 +170,36 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 }
 .cta:hover { background: var(--available-hover); }
 
+.cotizador { margin-top: 20px; padding: 16px; border-radius: 12px; background: var(--bg); }
+.cot-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.cot-head h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.cot-head span { color: var(--muted); font-size: .78rem; }
+.cot-lista { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cot-lista li {
+  display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px;
+  background: var(--surface); border-radius: 8px; padding: 8px 10px; font-size: .85rem; font-variant-numeric: tabular-nums;
+}
+.cot-id { font-weight: 600; }
+.cot-calc { color: var(--muted); font-size: .78rem; }
+.cot-monto { font-weight: 500; }
+.cot-lista button {
+  width: 26px; height: 26px; border: 0; border-radius: 50%; background: var(--bg); color: var(--ink);
+  font-size: 1rem; line-height: 1; cursor: pointer;
+}
+.cot-lista button:hover:not(:disabled) { background: #f6dcdb; color: var(--sold); }
+.cot-lista button:disabled { opacity: .3; cursor: not-allowed; }
+.cot-total {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 12px;
+  padding-top: 12px; border-top: 1px solid var(--line);
+}
+.cot-total span { color: var(--muted); font-size: .85rem; }
+.cot-total strong { font-size: 1.25rem; font-weight: 600; color: var(--available-hover); font-variant-numeric: tabular-nums; }
+.cotizador .cot-combinar { margin-top: 14px; padding: 11px; background: var(--surface); }
+.cotizador .cot-combinar[aria-pressed="true"] { background: var(--available); color: #fff; }
+.cot-aviso { margin: 10px 0 0; font-size: .82rem; line-height: 1.4; color: var(--available-hover); }
+.cot-aviso.error { color: #b42318; }
+.cot-nota { margin: 10px 0 0; color: var(--muted); font-size: .72rem; }
+
 .acciones { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
 .acciones .cta { margin: 0; }
 .cta-wa { display: flex; align-items: center; justify-content: center; gap: 8px; background: #1f9d55; }
@@ -238,6 +271,9 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
     display: block; position: absolute; top: 8px; left: 50%; z-index: 3; width: 40px; height: 4px;
     margin-left: -20px; border-radius: 4px; background: rgba(255, 255, 255, .85); box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
   }
+  /* Combinando lotes la hoja se encoge para dejar ver el mapa */
+  .panel.combinando { max-height: 46dvh; }
+  .panel.combinando .gallery { display: none; }
   .gallery .track, .gallery .empty { aspect-ratio: 16 / 10; }
   .gallery .thumbs { display: none; } /* en el celular se desliza el carrusel; el contador indica la posición */
   .panel-body { padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); }

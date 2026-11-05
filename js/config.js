@@ -2,6 +2,7 @@
 window.SITIO = {
   whatsapp: '50494917294', // número con código de país, p.ej. '50499999999'; vacío oculta los botones de WhatsApp
   moneda: 'L',
+  precioVara: 950, // lempiras por vara²: precio aproximado de los lotes que no tienen "precio" en el inventario
   coordenadas: { lat: 15.811090, lng: -87.926862 },
   // Ubicación del plano sobre el mapa (aproximada: su lado suroeste va junto a la calle existente, sin taparla):
   // el punto "origen" del plano (metros, X al este, Y al norte) cae en lat/lng y el plano se gira "rotacion" grados
