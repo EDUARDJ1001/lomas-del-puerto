@@ -64,6 +64,7 @@ textarea { resize: vertical; }
 .lote { background: #fff; border-radius: var(--radius); border-left: 4px solid var(--accent); }
 .lote[data-estado="reservado"] { border-left-color: var(--amber); }
 .lote[data-estado="vendido"] { border-left-color: var(--grey); }
+.lote[data-estado="no_disponible"] { border-left-color: #c9cdd0; }
 .lote-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 6px; }
 .lote-toggle {
   flex: 1; display: flex; align-items: baseline; gap: 12px; padding: 6px 8px; border: 0; background: none; text-align: left; cursor: pointer;

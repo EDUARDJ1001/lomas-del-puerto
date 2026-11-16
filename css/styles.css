@@ -11,6 +11,7 @@
   --available-hover: #2c7d47;
   --sold: #d64541;
   --reserved: #ef8a24;
+  --unavailable: #b4b8bc; /* gris más claro que la calle (--asphalt) */
   --selected: #f2b33d;
   --shadow: 0 10px 30px rgba(20, 30, 25, .14);
   --radius: 14px;
@@ -35,8 +36,8 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 .back { color: var(--muted); text-decoration: none; font-size: 1.35rem; }
 .back:hover { color: var(--ink); }
 
-.legend { display: flex; gap: 18px; list-style: none; margin: 0; padding: 0; font-size: .9rem; }
-.legend li { display: flex; align-items: center; gap: 8px; }
+.legend { display: flex; flex-wrap: wrap; row-gap: 4px; column-gap: 18px; list-style: none; margin: 0; padding: 0; font-size: .9rem; }
+.legend li { display: flex; white-space: nowrap; align-items: center; gap: 8px; }
 .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
 .legend b { font-variant-numeric: tabular-nums; }
 
@@ -49,6 +50,8 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 
 /* Plano sobre el mapa. --m = píxeles por metro (js/app.js): calles y textos conservan su tamaño real en metros */
 .base-line { fill: none; stroke: #fff; stroke-opacity: .55; stroke-width: 1; }
+.green-area { fill: #7fbf7a; fill-opacity: .45; stroke: none; }
+.tree { fill: none; stroke: #3f7d3a; stroke-opacity: .7; stroke-width: 1; }
 .street { fill: var(--asphalt); fill-opacity: .92; stroke: var(--asphalt); stroke-width: calc(var(--m) * .15px); }
 .street-edge { fill: none; stroke: var(--asphalt-edge); stroke-width: calc(var(--m) * .6px); stroke-linecap: round; }
 .street-center { fill: none; stroke: var(--road-line); stroke-width: max(1px, calc(var(--m) * .3px)); stroke-dasharray: calc(var(--m) * 2.5px) calc(var(--m) * 1.8px); }
@@ -64,6 +67,7 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 .lot-label small {
   display: block; margin-top: .2em; font-size: .78em; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-align: center;
 }
+.lot-label.unavailable span { color: #4a4f54; text-shadow: none; }
 .sin-etiquetas .lot-label, .sin-etiquetas .street-label { display: none; }
 
 .proyecto-pin { display: none; }
@@ -83,6 +87,7 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 .lot.available:hover, .lot.available:focus { fill: var(--available-hover); fill-opacity: .95; outline: none; }
 .lot.sold { fill: var(--sold); fill-opacity: .88; }
 .lot.reserved { fill: var(--reserved); fill-opacity: .88; }
+.lot.unavailable { fill: var(--unavailable); fill-opacity: .92; }
 .lot.selected { fill: var(--selected) !important; fill-opacity: .95; }
 /* Cotizador en modo combinar: vecinos que se pueden agregar */
 .lot.vecino { fill: #8fd3a5; fill-opacity: .95; stroke: var(--selected); stroke-width: 3; stroke-dasharray: 6 4; }
@@ -260,7 +265,7 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
   .brand p { padding-left: 10px; font-size: .78rem; }
   .brand p span { display: block; }
   .brand p .sep { display: none; }
-  .legend { gap: 12px; font-size: .82rem; }
+  .legend { column-gap: 12px; font-size: .82rem; }
   /* Hoja inferior fija a la pantalla; se cierra con la X o deslizándola hacia abajo */
   .panel {
     position: fixed; left: 0; right: 0; bottom: 0; width: auto; max-height: 82dvh;

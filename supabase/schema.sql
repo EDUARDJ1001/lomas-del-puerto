@@ -9,7 +9,7 @@ create table if not exists public.lotes (
   numero      int  not null,
   area_m2     numeric(10, 2) not null,
   area_vrs2   numeric(10, 2) not null,
-  estado      text not null default 'disponible' check (estado in ('disponible', 'reservado', 'vendido')),
+  estado      text not null default 'disponible',
   precio      numeric(12, 2),                        -- null = "A consultar"
   descripcion text not null default '',
   medidas     text,                                  -- null = medidas calculadas del plano
@@ -17,6 +17,17 @@ create table if not exists public.lotes (
   updated_at  timestamptz not null default now(),
   unique (bloque, numero)
 );
+
+-- Lado 2 (polígono 1B): ids '1B-A-1', bloques A, B, C y L (locales). Se puede volver a ejecutar en una base que ya existe.
+alter table public.lotes add column if not exists sector text not null default ''; -- '' = primer plano, '1B' = lado 2
+alter table public.lotes drop constraint if exists lotes_bloque_check;
+alter table public.lotes add constraint lotes_bloque_check check (bloque in ('A', 'B', 'C', 'L'));
+alter table public.lotes drop constraint if exists lotes_bloque_numero_key;
+alter table public.lotes drop constraint if exists lotes_sector_bloque_numero_key;
+alter table public.lotes add constraint lotes_sector_bloque_numero_key unique (sector, bloque, numero);
+-- Estados: no_disponible = aún no está a la venta (gris en el mapa)
+alter table public.lotes drop constraint if exists lotes_estado_check;
+alter table public.lotes add constraint lotes_estado_check check (estado in ('disponible', 'reservado', 'vendido', 'no_disponible'));
 
 create or replace function public.tocar_updated_at() returns trigger language plpgsql as $$
 begin

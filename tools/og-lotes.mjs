@@ -9,7 +9,8 @@ import { pathToFileURL } from 'node:url';
 const root = path.resolve(import.meta.dirname, '..');
 const read = f => JSON.parse(fs.readFileSync(path.join(root, f), 'utf8'));
 const lotes = read('data/lotes.json');
-const base = read('data/plano-base.json');
+// Cada lado tiene su propio plano y sus propias coordenadas: cada miniatura muestra solo el lado de su lote
+const bases = { '': read('data/plano-base.json'), '1B': read('data/plano-base-lado2.json') };
 
 const navegador = [
   process.env.CHROME,
@@ -26,19 +27,22 @@ const pt = ([x, y]) => `${x},${-y}`;
 const seg = segs => segs.map(([a, b]) => `M${pt(a)}L${pt(b)}`).join('');
 const centro = p => p.reduce(([sx, sy], [x, y]) => [sx + x / p.length, sy + y / p.length], [0, 0]);
 
-// Todo lo que no cambia entre lotes: calles, nombres de calles y bordes del plano
-const fondo = [
+// Todo lo que no cambia entre lotes: área verde, calles, nombres de calles y bordes del plano
+const fondoDe = base => [
+  ...(base.verdes || []).map(v => `<polygon class="green-area" points="${v.map(pt).join(' ')}"/>`),
   ...base.lineas.map(l => `<polyline class="base-line" points="${l.map(pt).join(' ')}"/>`),
   ...base.calles.superficies.map(s => `<polygon class="street" points="${s.map(pt).join(' ')}"/>`),
   `<path class="street-edge" d="${seg(base.calles.bordes)}"/>`,
   `<path class="street-center" d="${seg(base.calles.ejes)}"/>`,
   ...base.textos.map(t => `<text class="street-label" x="${t.p[0]}" y="${-t.p[1]}" dominant-baseline="hanging" transform="rotate(${-t.angulo} ${t.p[0]} ${-t.p[1]})">${t.texto}</text>`),
 ].join('');
+const fondos = Object.fromEntries(Object.entries(bases).map(([k, b]) => [k, fondoDe(b)]));
 
 const css = `
   body { margin: 0; width: ${W}px; height: ${H}px; overflow: hidden; background: #f4f2ec; font-family: Poppins, sans-serif; }
   svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   .base-line { fill: none; stroke: #b9b4a6; stroke-width: .18; }
+  .green-area { fill: #cfe5c6; }
   .street { fill: #6b7075; stroke: #6b7075; stroke-width: .15; }
   .street-edge { fill: none; stroke: #3a3e42; stroke-width: .6; stroke-linecap: round; }
   .street-center { fill: none; stroke: #f5c400; stroke-width: .3; stroke-dasharray: 2.5 1.8; }
@@ -64,7 +68,8 @@ for (const l of lotes) {
   const h = Math.max(48, (Math.max(...ys) - Math.min(...ys)) * 1.25, (Math.max(...xs) - Math.min(...xs)) * 2.2 * H / W);
   const w = h * W / H;
   const vb = [cx - w * 0.68, -cy - h / 2, w, h].join(' ');
-  const lots = lotes.map(o => {
+  const lado = l.sector || '';
+  const lots = lotes.filter(o => (o.sector || '') === lado).map(o => {
     const sel = o.id === l.id ? ' sel' : '';
     const [x, y] = centro(o.poligono);
     return `<polygon class="lot${sel}" points="${o.poligono.map(pt).join(' ')}"/><text class="lot-label${sel}" x="${x}" y="${-y}">${o.id}</text>`;
@@ -72,10 +77,10 @@ for (const l of lotes) {
   const html = `<!doctype html><meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=block">
 <style>${css}</style>
-<svg viewBox="${vb}" preserveAspectRatio="xMidYMid slice">${fondo}${lots}</svg>
+<svg viewBox="${vb}" preserveAspectRatio="xMidYMid slice">${fondos[lado]}${lots}</svg>
 <div class="card">
   <p class="eyebrow">Lomas del Puerto · Puerto Cortés</p>
-  <p class="titulo">Lote ${l.id}</p>
+  <p class="titulo">${l.tipo === 'local' ? 'Local' : 'Lote'} ${l.id}</p>
   <p class="area">${fmt(l.area_m2)} m² · ${fmt(l.area_vrs2)} vrs²</p>
 </div>`;
   const archivo = path.join(tmp, `${l.id}.html`);

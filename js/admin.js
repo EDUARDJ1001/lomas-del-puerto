@@ -58,7 +58,7 @@ $('filtros').addEventListener('click', e => {
 });
 
 async function cargar() {
-  const { data, error } = await sb.from('lotes').select('*').order('bloque').order('numero');
+  const { data, error } = await sb.from('lotes').select('*').order('sector').order('bloque').order('numero');
   if (error) return aviso(`No se pudieron cargar los lotes: ${error.message}`, true);
   lotes = data;
   pintar();
@@ -66,13 +66,13 @@ async function cargar() {
 
 function pintar() {
   const lista = $('lotes');
-  lista.replaceChildren(...lotes.filter(l => !filtro || l.bloque === filtro).map(fila));
+  lista.replaceChildren(...lotes.filter(l => !filtro || (filtro === '1B' ? l.sector === '1B' : !l.sector && l.bloque === filtro)).map(fila));
   resumen();
 }
 
 function resumen() {
   const cuenta = e => lotes.filter(l => l.estado === e).length;
-  $('resumen').textContent = `${cuenta('disponible')} disponibles · ${cuenta('reservado')} reservados · ${cuenta('vendido')} vendidos`;
+  $('resumen').textContent = `${cuenta('disponible')} disponibles · ${cuenta('reservado')} reservados · ${cuenta('vendido')} vendidos · ${cuenta('no_disponible')} no disponibles`;
 }
 
 function fila(lote) {

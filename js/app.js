@@ -11,14 +11,23 @@ const wrap = document.querySelector('.map-wrap');
 const fmt = (n, d = 2) => n.toLocaleString('es-HN', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 // Metros del plano -> [lat, lng]: giro alrededor de "origen" y traslado a su posición en el mapa
+// Cada lado del proyecto tiene su propio plano: SITIO.plano (bloques A, B y C) y SITIO.plano2 (polígono 1B)
 const GEO = CONFIG.plano;
-const rad = GEO.rotacion * Math.PI / 180, latRad = GEO.lat * Math.PI / 180;
+const latRad = GEO.lat * Math.PI / 180;
 const M_LAT = 111132.92 - 559.82 * Math.cos(2 * latRad), M_LNG = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
-const geo = ([x, y]) => {
-  const dx = x - GEO.origen[0], dy = y - GEO.origen[1];
-  const e = dx * Math.cos(rad) - dy * Math.sin(rad), n = dx * Math.sin(rad) + dy * Math.cos(rad);
-  return [GEO.lat + n / M_LAT, GEO.lng + e / M_LNG];
+const transformacion = G => {
+  const rad = G.rotacion * Math.PI / 180;
+  const f = ([x, y]) => {
+    const dx = x - G.origen[0], dy = y - G.origen[1];
+    const e = dx * Math.cos(rad) - dy * Math.sin(rad), n = dx * Math.sin(rad) + dy * Math.cos(rad);
+    return [G.lat + n / M_LAT, G.lng + e / M_LNG];
+  };
+  f.rotacion = G.rotacion;
+  return f;
 };
+const geo = transformacion(GEO);
+const geo2 = CONFIG.plano2 ? transformacion(CONFIG.plano2) : null;
+const geoDe = l => (l.sector ? geo2 : geo);
 
 let lotes = [], map = null, home = null;
 // Lotes elegidos en el cotizador (siempre pegados entre sí) y si se está en modo "combinar con vecinos"
@@ -27,16 +36,25 @@ let seleccion = [], combinando = false;
 init();
 
 async function init() {
-  const [geom, base, inv] = await Promise.all([
+  const [geom, base, base2, inv] = await Promise.all([
     ...['data/lotes.json', 'data/plano-base.json'].map(u => fetch(u).then(r => r.json())),
+    geo2 ? fetch('data/plano-base-lado2.json').then(r => r.json()) : null,
     window.cargarInventario(), // js/inventario.js
   ]);
-  lotes = geom.map(l => ({ ...l, ...(inv[l.id] || { estado: 'disponible', fotos: [] }) }));
-  lotes.forEach(l => { l.disponible = l.estado === 'disponible'; });
+  // Sin SITIO.plano2 no se muestra el lado 2
+  // Un lote que todavía no está en el inventario (p. ej. el lado 2 antes de cargarlo a Supabase) no está a la venta
+  lotes = geom.filter(l => !l.sector || geo2).map(l => ({ ...l, ...(inv[l.id] || { estado: 'no_disponible', fotos: [] }) }));
+  lotes.forEach(l => {
+    l.disponible = l.estado === 'disponible';
+    l.geo = geoDe(l);
+    l.nombre = `${l.tipo === 'local' ? 'Local' : 'Lote'} ${l.numero}`;
+    l.grupo = nombreGrupo([l]);
+  });
   calcularVecinos();
 
   setupMap();
-  drawBase(base);
+  drawBase(base, geo);
+  if (base2) drawBase(base2, geo2);
   drawLots();
   drawLegend();
   setupPanel();
@@ -48,7 +66,7 @@ function abrirDesdeUrl() {
   const id = new URLSearchParams(location.search).get('lote')?.toUpperCase();
   const l = lotes.find(x => x.id === id);
   if (!l) return;
-  map.setView(geo(centroid(l.poligono)), 19.5, { animate: false });
+  map.setView(l.geo(centroid(l.poligono)), 19.5, { animate: false });
   if (l.disponible) seleccionar(l);
 }
 
@@ -88,7 +106,7 @@ function setupMap() {
     document.querySelectorAll('.map-layers button').forEach(x => x.setAttribute('aria-pressed', x === b));
   });
 
-  home = L.latLngBounds(lotes.flatMap(l => l.poligono.map(geo)));
+  home = L.latLngBounds(lotes.flatMap(l => l.poligono.map(l.geo)));
   // Pin del proyecto, visible solo con el mapa alejado; al tocarlo se vuelve a ver el plano completo
   L.marker(home.getCenter(), {
     icon: L.divIcon({ className: 'proyecto-pin', html: '<span>Lomas del Puerto</span>', iconSize: null }), keyboard: false,
@@ -117,49 +135,53 @@ function setupMap() {
   });
 }
 
-function drawBase(base) {
+function drawBase(base, geo) {
   const fijo = { interactive: false, smoothFactor: 0 };
+  for (const v of base.verdes || []) L.polygon(v.map(geo), { ...fijo, className: 'green-area' }).addTo(map);
   for (const line of base.lineas) L.polyline(line.map(geo), { ...fijo, className: 'base-line' }).addTo(map);
+  for (const a of base.arboles || []) L.polyline(a.map(geo), { ...fijo, className: 'tree' }).addTo(map);
   const { superficies, bordes, ejes } = base.calles;
   const segs = s => s.map(([a, b]) => [geo(a), geo(b)]);
   for (const s of superficies) L.polygon(s.map(geo), { ...fijo, className: 'street' }).addTo(map);
   L.polyline(segs(bordes), { ...fijo, className: 'street-edge' }).addTo(map);
   L.polyline(segs(ejes), { ...fijo, className: 'street-center' }).addTo(map);
   // El texto gira junto con el plano (CSS gira en sentido horario, el plano en antihorario)
-  for (const t of base.textos) etiqueta(t.p, `<span style="--giro: ${-(t.angulo + GEO.rotacion)}deg">${t.texto}</span>`, 'street-label');
+  for (const t of base.textos) etiqueta(geo(t.p), `<span style="--giro: ${-(t.angulo + geo.rotacion)}deg">${t.texto}</span>`, 'street-label');
 }
 
 function drawLots() {
   for (const l of lotes) {
-    // Reservado: naranja; vendido (o cualquier otro estado): rojo, con el estado escrito sobre el lote
-    const cls = l.disponible ? 'available' : l.estado === 'reservado' ? 'reserved' : 'sold';
-    const capa = L.polygon(l.poligono.map(geo), { className: `lot ${cls}`, interactive: l.disponible, smoothFactor: 0 }).addTo(map);
+    // Reservado: naranja; no disponible: gris claro; vendido (o cualquier otro estado): rojo, con el estado escrito sobre el lote
+    const cls = l.disponible ? 'available' : { reservado: 'reserved', no_disponible: 'unavailable' }[l.estado] || 'sold';
+    const capa = L.polygon(l.poligono.map(l.geo), { className: `lot ${cls}`, interactive: l.disponible, smoothFactor: 0 }).addTo(map);
     l.node = capa.getElement();
     if (l.disponible) {
       l.node.setAttribute('tabindex', '0');
       l.node.setAttribute('role', 'button');
-      l.node.setAttribute('aria-label', `Lote ${l.id}, ${fmt(l.area_m2)} m², disponible`);
+      l.node.setAttribute('aria-label', `${l.tipo === 'local' ? 'Local' : 'Lote'} ${l.id}, ${fmt(l.area_m2)} m², disponible`);
       l.node.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clicLote(l); } });
       capa.on('click', () => clicLote(l));
       capa.on('mouseover mousemove', e => showTip(l, e.originalEvent));
       capa.on('mouseout', hideTip);
     }
-    const estado = { reserved: 'Reservado', sold: 'Vendido' }[cls];
-    etiqueta(centroid(l.poligono), `<span>${l.id}${estado ? `<small>${estado}</small>` : ''}</span>`, `lot-label ${cls}`);
+    const estado = { reserved: 'Reservado', sold: 'Vendido', unavailable: 'No disponible' }[cls];
+    etiqueta(l.geo(centroid(l.poligono)), `<span>${l.id}${estado ? `<small>${estado}</small>` : ''}</span>`, `lot-label ${cls}`);
   }
 }
 
-function etiqueta(p, html, className) {
-  L.marker(geo(p), { icon: L.divIcon({ className, html, iconSize: null }), interactive: false, keyboard: false }).addTo(map);
+function etiqueta(latlng, html, className) {
+  L.marker(latlng, { icon: L.divIcon({ className, html, iconSize: null }), interactive: false, keyboard: false }).addTo(map);
 }
 
 function drawLegend() {
   const libres = lotes.filter(l => l.disponible).length;
   const reservados = lotes.filter(l => l.estado === 'reservado').length;
+  const noDisponibles = lotes.filter(l => l.estado === 'no_disponible').length;
   document.getElementById('legend').innerHTML = `
     <li><i style="background:var(--available)"></i>Disponibles <b>${libres}</b></li>
     <li><i style="background:var(--reserved)"></i>Reservados <b>${reservados}</b></li>
-    <li><i style="background:var(--sold)"></i>Vendidos <b>${lotes.length - libres - reservados}</b></li>`;
+    <li><i style="background:var(--sold)"></i>Vendidos <b>${lotes.length - libres - reservados - noDisponibles}</b></li>
+    ${noDisponibles ? `<li><i style="background:var(--unavailable)"></i>No disponibles <b>${noDisponibles}</b></li>` : ''}`;
 }
 
 // ---------- Panel de detalles ----------
@@ -193,7 +215,14 @@ const dinero = n => `${CONFIG.moneda} ${fmt(n, 0)}`;
 // Precio del inventario si lo tiene; si no, el aproximado por vara²
 const precioLote = l => l.precio || Math.round(l.area_vrs2 * CONFIG.precioVara);
 const suma = (ls, f) => ls.reduce((t, l) => t + f(l), 0);
-const ordenar = ls => [...ls].sort((a, b) => a.bloque.localeCompare(b.bloque) || a.numero - b.numero);
+const ordenar = ls => [...ls].sort((a, b) => (a.sector || '').localeCompare(b.sector || '') || a.bloque.localeCompare(b.bloque) || a.numero - b.numero);
+// "Bloque A", "Bloques A y B", "Polígono 1B · Bloque C", "Polígono 1B · Locales" (los vecinos siempre son del mismo lado)
+function nombreGrupo(ls) {
+  const bloques = [...new Set(ordenar(ls).map(l => l.bloque))];
+  const texto = bloques.length === 1 && bloques[0] === 'L' ? 'Locales'
+    : `${bloques.length > 1 ? 'Bloques' : 'Bloque'} ${enLista(bloques.map(b => (b === 'L' ? 'de locales' : b)))}`;
+  return ls[0].sector ? `Polígono ${ls[0].sector} · ${texto}` : texto;
+}
 const enLista = xs => xs.length < 2 ? xs[0] : `${xs.slice(0, -1).join(', ')} y ${xs.at(-1)}`;
 const vecinosLibres = () => new Set(seleccion.flatMap(s => [...s.vecinos]).filter(v => v.disponible && !seleccion.includes(v)));
 
@@ -242,11 +271,10 @@ function renderPanel() {
     l.node.classList.toggle('vecino', combinando && vecinos.has(l));
   }
   const m2 = suma(sel, l => l.area_m2), vrs = suma(sel, l => l.area_vrs2), total = suma(sel, precioLote);
-  const bloques = [...new Set(sel.map(l => l.bloque))];
   const $ = id => document.getElementById(id);
 
-  $('p-bloque').textContent = uno ? `Bloque ${uno.bloque}` : `${bloques.length > 1 ? 'Bloques' : 'Bloque'} ${enLista(bloques)}`;
-  $('p-titulo').textContent = uno ? `Lote ${uno.numero}` : `${sel.length} lotes juntos`;
+  $('p-bloque').textContent = nombreGrupo(sel);
+  $('p-titulo').textContent = uno ? uno.nombre : `${sel.length} lotes juntos`;
   $('p-area').textContent = `${fmt(m2)} m²`;
   $('p-vrs').textContent = `${fmt(vrs)} vrs²`;
   $('p-area').previousElementSibling.textContent = uno ? 'Área' : 'Área total';
@@ -283,7 +311,7 @@ function renderPanel() {
   const cta = $('p-cta');
   cta.hidden = !CONFIG.whatsapp;
   if (CONFIG.whatsapp) {
-    const que = uno ? `el lote ${uno.id} (bloque ${uno.bloque}, lote ${uno.numero}, ${fmt(m2)} m²)`
+    const que = uno ? `el lote ${uno.id} (${uno.grupo}, ${uno.nombre.toLowerCase()}, ${fmt(m2)} m²)`
       : `los lotes ${enLista(sel.map(l => l.id))} juntos (${fmt(m2)} m², ${fmt(vrs)} vrs²)`;
     const msg = `Hola, estoy interesado en ${que} de Lomas del Puerto. Precio aproximado según el cotizador: ${dinero(total)}. ¿Me pueden dar más información?
 
@@ -301,7 +329,7 @@ ${location.origin}/lote/${sel[0].id}`;
 let mensajeAuto = '';
 function prepararContacto(sel, m2) {
   const form = document.getElementById('contacto');
-  const nuevo = sel.length === 1 ? `Me interesa el lote ${sel[0].numero} del bloque ${sel[0].bloque}.`
+  const nuevo = sel.length === 1 ? `Me interesa el ${sel[0].nombre.toLowerCase()} (${sel[0].grupo}).`
     : `Me interesan los lotes ${enLista(sel.map(l => l.id))} juntos.`;
   if (!form.mensaje.value.trim() || form.mensaje.value === mensajeAuto) form.mensaje.value = nuevo;
   mensajeAuto = nuevo;
@@ -463,8 +491,9 @@ function calcularVecinos() {
       Math.min(len, Math.max(pos(r), pos(s))) - Math.max(0, Math.min(pos(r), pos(s))) > MIN);
   });
   lotes.forEach(l => { l.vecinos = new Set(); });
+  // Cada lado tiene sus propias coordenadas: solo se comparan lotes del mismo lado
   lotes.forEach((a, i) => lotes.slice(i + 1).forEach(b => {
-    if (comparten(a.poligono, b.poligono)) { a.vecinos.add(b); b.vecinos.add(a); }
+    if (a.sector === b.sector && comparten(a.poligono, b.poligono)) { a.vecinos.add(b); b.vecinos.add(a); }
   }));
 }
 

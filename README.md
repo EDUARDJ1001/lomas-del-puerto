@@ -1,6 +1,9 @@
 # Lomas del Puerto — mapa de lotes
 
-Mapa interactivo de los 53 lotes (bloques A, B y C) del plano de lotificación, Barrio Lomas del Puerto, Puerto Cortés.
+Mapa interactivo de los lotes de Barrio Lomas del Puerto, Puerto Cortés, en dos lados:
+
+- **Primer plano**: 53 lotes (bloques A, B y C), con ids `A-1` … `C-14`.
+- **Lado 2, polígono 1B**: 33 lotes (bloques A, B y C) y 5 locales comerciales, al suroeste de la punta sur del primero. Sus ids llevan delante el polígono, `1B-A-1` … `1B-C-10`, y los locales son `1B-L-1` … `1B-L-5`.
 
 ## Ver la web
 
@@ -46,6 +49,12 @@ plano: { origen: [193.83, 179.34], lat: 15.812103, lng: -87.926960, rotacion: 86
 - `lat` / `lng`: dónde cae el centro del plano. Para moverlo, 0.00001° son unos 1.1 m (en `lat` hacia el norte, en `lng` hacia el este).
 - `rotacion`: grados de giro en sentido antihorario.
 
+`plano2` hace lo mismo con el lado 2. Su `origen` es la esquina este del local 1: queda junto a la calle existente, al oeste de la calle que baja al sur. Sin `plano2` el lado 2 no se muestra.
+
+```js
+plano2: { origen: [216.4, 44.4], lat: 15.810837, lng: -87.926774, rotacion: 69.7 },
+```
+
 ## Editar lotes — `data/inventario.json`
 
 Cada lote se identifica como `BLOQUE-NÚMERO` (por ejemplo `A-7`):
@@ -60,7 +69,7 @@ Cada lote se identifica como `BLOQUE-NÚMERO` (por ejemplo `A-7`):
 }
 ```
 
-- `estado`: `disponible` (verde, se puede abrir), `reservado` (naranja, con la palabra "Reservado") o `vendido` (rojo, con la palabra "Vendido"). Los reservados y vendidos no abren ficha.
+- `estado`: `disponible` (verde, se puede abrir), `reservado` (naranja, con la palabra "Reservado"), `vendido` (rojo, con la palabra "Vendido") o `no_disponible` (gris claro, con "No disponible": aún no está a la venta; de momento, todo el lado 2). Solo los disponibles abren ficha.
 - `precio`: número, o `null` para mostrar "A consultar".
 - `medidas`: opcional. Si no se pone, se muestran las medidas calculadas del plano (solo en lotes de 4 lados).
 - `fotos`: rutas dentro de la carpeta `fotos/`. La primera es la portada.
@@ -74,7 +83,9 @@ Mientras `supabase` esté vacío en `js/config.js`, el sitio usa `data/inventari
    - la tabla `administradores`;
    - los permisos;
    - el bucket público `fotos`.
-2. Ejecutar `supabase/seed.sql` (los 53 lotes). Se regenera con `node tools/seed-supabase.mjs` si cambia `data/inventario.json`.
+
+   En una base que ya existía, volver a ejecutarlo agrega la columna `sector` (`'1B'` en el lado 2) y permite los locales (bloque `L`).
+2. Ejecutar `supabase/seed.sql` (los 91 lotes de los dos lados). Se regenera con `node tools/seed-supabase.mjs` si cambia `data/inventario.json`.
 3. **Authentication → Sign In / Providers**: desactivar *Allow new users to sign up*.
 4. **Authentication → Users → Add user → Create new user**: crear la cuenta con correo y contraseña, y marcar *Auto Confirm User*. Después darle permiso de edición en el SQL Editor:
    ```sql
@@ -111,7 +122,8 @@ node tools/og-lotes.mjs
 
 ## Regenerar la geometría desde el plano
 
-`data/lotes.json` y `data/plano-base.json` salen de `pdfdata/pdfimport.dxf` (PDFIMPORT del plano en AutoCAD). La carpeta `pdfdata/` no se sube al repositorio porque contiene datos del terreno:
+`data/lotes.json` y `data/plano-base.json` salen de `pdfdata/pdfimport.dxf` (PDFIMPORT del plano en AutoCAD).
+El lado 2 sale de `pdfdata/pdfimport-lado2.dxf` (`tools/extract-lado2.mjs`): sus lotes se agregan a `data/lotes.json`, y sus calles y área verde van a `data/plano-base-lado2.json`. La carpeta `pdfdata/` no se sube al repositorio porque contiene datos del terreno:
 
 ```bash
 node tools/extract-lotes.mjs

@@ -13,7 +13,7 @@ export default function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const origen = `${req.headers['x-forwarded-proto'] || 'http'}://${host}`;
   const destino = lote ? `/mapa?lote=${lote.id}` : '/mapa';
-  const titulo = lote ? `Lote ${lote.id} · Lomas del Puerto` : 'Lomas del Puerto · Lotes disponibles';
+  const titulo = lote ? `${lote.tipo === 'local' ? 'Local' : 'Lote'} ${lote.id} · Lomas del Puerto` : 'Lomas del Puerto · Lotes disponibles';
   const desc = lote
     ? `${fmt(lote.area_m2)} m² · ${fmt(lote.area_vrs2)} vrs² en Barrio Lomas del Puerto, Puerto Cortés.`
     : 'Lotes residenciales en Barrio Lomas del Puerto, Puerto Cortés.';

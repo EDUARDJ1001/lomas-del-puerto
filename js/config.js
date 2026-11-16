@@ -8,6 +8,9 @@ window.SITIO = {
   // el punto "origen" del plano (metros, X al este, Y al norte) cae en lat/lng y el plano se gira "rotacion" grados
   // en sentido antihorario. Para corregirlo: mover lat/lng (0.00001° ≈ 1.1 m) o cambiar la rotación.
   plano: { origen: [193.83, 179.34], lat: 15.812103, lng: -87.926960, rotacion: 86.8 },
+  // Lado 2 (polígono 1B, al suroeste de la punta sur del plano anterior), igual que "plano". Su "origen" es la esquina
+  // este del local 1: va junto a la calle existente, al oeste de la calle que baja al sur. Sin plano2 no se muestra.
+  plano2: { origen: [216.4, 44.4], lat: 15.810837, lng: -87.926774, rotacion: 69.7 },
   radioMapaKm: 5, // el mapa no deja alejarse ni moverse más allá de este radio alrededor del proyecto
   // Supabase (Project Settings → API): URL del proyecto y clave pública "anon"/"publishable".
   // Vacío = se usa data/inventario.json. Nunca poner aquí la clave "service_role"/"secret".
