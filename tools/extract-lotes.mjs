@@ -1,4 +1,4 @@
-// Extrae los 53 lotes de pdfdata/pdfimport.dxf (PDFIMPORT del plano) -> data/lotes.json + data/plano-base.json
+// Extrae los 53 lotes de pdfdata/pdfimport-lado1.dxf (PDFIMPORT del plano, con los cambios de B-21 y C-14) -> data/lotes.json + data/plano-base.json
 // y, con tools/extract-lado2.mjs, los del lado 2 (pdfdata/pdfimport-lado2.dxf) -> data/lotes.json + data/plano-base-lado2.json
 // Uso: node tools/extract-lotes.mjs
 import fs from 'node:fs';
@@ -7,12 +7,22 @@ import { faces, segmentsFrom, inside } from './polygonize.mjs';
 import { VRS_POR_M2, centro, simplificar, ladosAprox, trazarCalles } from './plano-utils.mjs';
 import { extraerLado2 } from './extract-lado2.mjs';
 
+// Lotes cuyo rótulo de área no se actualizó en el plano corregido
+const AREA_DEL_DIBUJO = ['C-14'];
+
 // Correcciones al dibujo: líneas faltantes en el PDF original
 const LINEAS_FALTANTES = [
   [[90.68, 134.52], [82.20, 139.77]], // frente del lote A-3
 ];
 
-const ents = readDxf('pdfdata/pdfimport.dxf');
+// El plano corregido viene corrido respecto al primero (pdfimport.dxf): se lleva al sistema de coordenadas
+// original para que SITIO.plano (js/config.js) y las correcciones de abajo sigan valiendo
+const DESPLAZAMIENTO = [4.239, 45.748];
+const ents = readDxf('pdfdata/pdfimport-lado1.dxf');
+for (const e of ents) {
+  e.pts = e.pts.map(([x, y]) => [x + DESPLAZAMIENTO[0], y + DESPLAZAMIENTO[1]]);
+  if (e.p2 && e.type !== 'MTEXT') e.p2 = [e.p2[0] + DESPLAZAMIENTO[0], e.p2[1] + DESPLAZAMIENTO[1]]; // en MTEXT p2 es una dirección
+}
 const segs = segmentsFrom(ents).concat(LINEAS_FALTANTES);
 const F = faces(segs).filter(f => f.area > 50);
 const T = ents.filter(x => x.type === 'MTEXT').map(x => ({ t: cleanText(x.text), p: x.pts[0] }));
@@ -43,9 +53,11 @@ for (const e of etiquetas) {
   if (!f) throw new Error(`Sin polígono para ${e.bloque}-${e.numero}`);
   usadas.add(f);
   const rot = areasRotuladas.filter(a => inside(a.p, f.ring)).map(a => a.v);
-  const area_m2 = rot.length ? rot[0] : 170;
+  const id = `${e.bloque}-${e.numero}`;
+  // C-14: el plano corregido le quitó terreno (pasó a B-21) pero su rótulo sigue en 743.42; se usa el área del dibujo
+  const area_m2 = AREA_DEL_DIBUJO.includes(id) ? +f.area.toFixed(2) : rot.length ? rot[0] : 170;
   lotes.push({
-    id: `${e.bloque}-${e.numero}`, bloque: e.bloque, numero: e.numero,
+    id, bloque: e.bloque, numero: e.numero,
     area_m2, area_vrs2: +(area_m2 * VRS_POR_M2).toFixed(2),
     area_dibujo_m2: +f.area.toFixed(2),
     lados_m: ladosAprox(f.ring),
@@ -80,5 +92,5 @@ fs.writeFileSync('data/plano-base-lado2.json', JSON.stringify(lado2.base));
 
 const total = lotes.reduce((s, l) => s + l.area_m2, 0);
 console.log(`lotes: ${lotes.length}  A:${lotes.filter(l => l.bloque === 'A').length} B:${lotes.filter(l => l.bloque === 'B').length} C:${lotes.filter(l => l.bloque === 'C').length}`);
-console.log(`área total rotulada: ${total.toFixed(2)} m² (plano: 17,292.13)`);
+console.log(`área total rotulada: ${total.toFixed(2)} m² (plano corregido: 17,514.59 con el rótulo viejo de C-14)`);
 for (const l of lotes) { const d = l.area_dibujo_m2 - l.area_m2; if (Math.abs(d) > 3) console.log(`  ${l.id}: rótulo ${l.area_m2} vs dibujo ${l.area_dibujo_m2} (${d.toFixed(1)})`); }
