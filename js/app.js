@@ -68,7 +68,7 @@ function abrirDesdeUrl() {
   const l = lotes.find(x => x.id === id);
   if (!l) return;
   map.setView(l.geo(centroid(l.poligono)), 19.5, { animate: false });
-  if (l.disponible) seleccionar(l);
+  if (l.disponible) seleccionar(l); else verEstado(l);
 }
 
 // ---------- Mapa base ----------
@@ -154,18 +154,18 @@ function drawLots() {
   for (const l of lotes) {
     // Reservado: naranja; no disponible: gris claro; vendido (o cualquier otro estado): rojo, con el estado escrito sobre el lote
     const cls = l.disponible ? 'available' : { reservado: 'reserved', no_disponible: 'unavailable' }[l.estado] || 'sold';
-    const capa = L.polygon(l.poligono.map(l.geo), { className: `lot ${cls}`, interactive: l.disponible, smoothFactor: 0 }).addTo(map);
-    l.node = capa.getElement();
-    if (l.disponible) {
-      l.node.setAttribute('tabindex', '0');
-      l.node.setAttribute('role', 'button');
-      l.node.setAttribute('aria-label', `${l.tipo === 'local' ? 'Local' : 'Lote'} ${l.id}, ${fmt(l.area_m2)} m², disponible`);
-      l.node.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clicLote(l); } });
-      capa.on('click', () => clicLote(l));
-      capa.on('mouseover mousemove', e => showTip(l, e.originalEvent));
-      capa.on('mouseout', hideTip);
-    }
+    // Todos se pueden abrir: los disponibles con su ficha completa; los demás solo con fotos y estado (verEstado)
+    const capa = L.polygon(l.poligono.map(l.geo), { className: `lot ${cls}`, smoothFactor: 0 }).addTo(map);
     const estado = { reserved: 'Reservado', sold: 'Vendido', unavailable: 'No disponible' }[cls];
+    l.estadoTexto = estado || 'Disponible';
+    l.node = capa.getElement();
+    l.node.setAttribute('tabindex', '0');
+    l.node.setAttribute('role', 'button');
+    l.node.setAttribute('aria-label', `${l.tipo === 'local' ? 'Local' : 'Lote'} ${l.id}, ${l.disponible ? `${fmt(l.area_m2)} m², disponible` : estado.toLowerCase()}`);
+    l.node.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clicLote(l); } });
+    capa.on('click', () => clicLote(l));
+    capa.on('mouseover mousemove', e => showTip(l, e.originalEvent));
+    capa.on('mouseout', hideTip);
     etiqueta(l.geo(centroid(l.poligono)), `<span>${l.id}${estado ? `<small>${estado}</small>` : ''}</span>`, `lot-label ${cls}`);
   }
 }
@@ -230,6 +230,10 @@ const vecinosLibres = () => new Set(seleccion.flatMap(s => [...s.vecinos]).filte
 // Fuera del modo combinar, un clic abre ese lote solo; dentro, lo agrega o lo quita de la cotización
 function clicLote(l) {
   hideTip();
+  if (!l.disponible) {
+    if (combinando && !panel.hidden) return avisar(`El lote ${l.id} no se puede cotizar: ${l.estadoTexto.toLowerCase()}.`);
+    return verEstado(l);
+  }
   if (!combinando || panel.hidden) return seleccionar(l);
   if (seleccion.includes(l)) return quitar(l);
   if (!vecinosLibres().has(l)) {
@@ -245,6 +249,26 @@ function seleccionar(l) {
   combinando = false;
   renderPanel();
   panel.scrollTop = 0;
+}
+
+// Vendido, reservado o no disponible: ficha corta, solo fotos y estado (sin precio, medidas ni cotizador)
+function verEstado(l) {
+  closePanel();
+  l.node.classList.add('selected');
+  document.getElementById('p-bloque').textContent = l.grupo;
+  document.getElementById('p-titulo').textContent = l.nombre;
+  ponerEstado(l);
+  panel.classList.add('solo-estado');
+  document.getElementById('gallery').hidden = false;
+  renderGallery(l);
+  panel.hidden = false;
+  panel.scrollTop = 0;
+}
+
+function ponerEstado(l) {
+  const badge = document.getElementById('p-estado');
+  badge.textContent = l.estadoTexto;
+  badge.dataset.estado = l.estado;
 }
 
 // Quitar un lote no puede dejar la cotización partida: de A-1, A-2 y A-3 no se puede quitar A-2
@@ -266,14 +290,15 @@ function avisar(texto, error = true) {
 function renderPanel() {
   const sel = ordenar(seleccion), uno = sel.length === 1 ? sel[0] : null;
   const vecinos = vecinosLibres();
-  for (const l of lotes) {
-    if (!l.disponible) continue;
+  for (const l of lotes) { // también los no disponibles: puede venir de la ficha corta de uno de ellos
     l.node.classList.toggle('selected', sel.includes(l));
     l.node.classList.toggle('vecino', combinando && vecinos.has(l));
   }
   const m2 = suma(sel, l => l.area_m2), vrs = suma(sel, l => l.area_vrs2), total = suma(sel, precioLote);
   const $ = id => document.getElementById(id);
 
+  panel.classList.remove('solo-estado');
+  ponerEstado(sel[0]);
   $('p-bloque').textContent = nombreGrupo(sel);
   $('p-titulo').textContent = uno ? uno.nombre : `${sel.length} lotes juntos`;
   $('p-area').textContent = `${fmt(m2)} m²`;
@@ -368,7 +393,7 @@ function closePanel() {
   panel.hidden = true;
   seleccion = [];
   combinando = false;
-  panel.classList.remove('combinando');
+  panel.classList.remove('combinando', 'solo-estado');
   lotes.forEach(l => l.node?.classList.remove('selected', 'vecino'));
   return true;
 }
@@ -467,7 +492,8 @@ function setupTouch() {
 
 function showTip(l, e) {
   const r = wrap.getBoundingClientRect();
-  tooltip.textContent = !combinando || panel.hidden ? `Lote ${l.id} · ${fmt(l.area_m2)} m²`
+  tooltip.textContent = !l.disponible ? `Lote ${l.id} · ${l.estadoTexto}`
+    : !combinando || panel.hidden ? `Lote ${l.id} · ${fmt(l.area_m2)} m²`
     : seleccion.includes(l) ? `Quitar lote ${l.id}`
     : vecinosLibres().has(l) ? `Agregar lote ${l.id} · ${dinero(precioLote(l))}`
     : `Lote ${l.id} · no es vecino`;

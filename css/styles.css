@@ -164,6 +164,11 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
   display: inline-block; background: #e3f3e8; color: var(--available-hover); font-weight: 600;
   font-size: .78rem; padding: 4px 10px; border-radius: 999px;
 }
+.badge[data-estado="reservado"] { background: #fdebd6; color: #a85a0e; }
+.badge[data-estado="vendido"] { background: #f8dcdb; color: #a52b28; }
+.badge[data-estado="no_disponible"] { background: #e6e8ea; color: #4a4f54; }
+/* Lotes no disponibles para la venta: solo fotos y estado */
+.panel.solo-estado .specs, .panel.solo-estado .desc, .panel.solo-estado .cotizador, .panel.solo-estado .acciones { display: none; }
 .specs { margin: 20px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-radius: 10px; overflow: hidden; }
 .specs div { background: var(--surface); padding: 12px 14px; }.specs dt { color: var(--muted); font-size: .78rem; }
 .specs dd { margin: 4px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
