@@ -40,6 +40,7 @@ async function init() {
     ...['data/lotes.json', 'data/plano-base.json'].map(u => fetch(u).then(r => r.json())),
     geo2 ? fetch('data/plano-base-lado2.json').then(r => r.json()) : null,
     window.cargarInventario(), // js/inventario.js
+    window.cargarAjustes(), // tarifa por vara² editable en /admin: actualiza CONFIG.precioVara
   ]);
   // Sin SITIO.plano2 no se muestra el lado 2
   // Un lote que todavía no está en el inventario (p. ej. el lado 2 antes de cargarlo a Supabase) no está a la venta

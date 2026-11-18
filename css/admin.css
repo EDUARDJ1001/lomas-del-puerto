@@ -54,6 +54,15 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
 textarea { resize: vertical; }
 
+.tarifa {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: end; gap: 12px;
+  margin-bottom: 12px; padding: 14px 16px; background: #fff; border-radius: var(--radius);
+}
+.tarifa h2 { margin: 0 0 2px; font-size: 1rem; font-weight: 600; }
+.tarifa p { margin: 0; font-size: .8rem; color: var(--muted); }
+.tarifa input { width: 11em; }
+.tarifa .btn:disabled { cursor: not-allowed; }
+
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .filters { display: flex; gap: 6px; overflow-x: auto; }
 .chip { padding: 7px 14px; border: 0; border-radius: 999px; background: #fff; font-size: .8rem; cursor: pointer; white-space: nowrap; }
@@ -100,6 +109,8 @@ textarea { resize: vertical; }
 .toast.error { background: var(--danger); }
 
 @media (max-width: 560px) {
+  .tarifa { grid-template-columns: 1fr; }
+  .tarifa input, .tarifa .btn { width: 100%; }
   .lote-body { grid-template-columns: 1fr; }
   .lote-body .btn { width: 100%; }
   .lote-toggle { flex-direction: column; gap: 0; position: relative; }

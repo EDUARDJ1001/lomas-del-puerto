@@ -58,11 +58,56 @@ $('filtros').addEventListener('click', e => {
 });
 
 async function cargar() {
-  const { data, error } = await sb.from('lotes').select('*').order('sector').order('bloque').order('numero');
+  const [{ data, error }, ajustes] = await Promise.all([
+    sb.from('lotes').select('*').order('sector').order('bloque').order('numero'),
+    sb.from('ajustes').select('precio_vara').eq('id', 1).maybeSingle(),
+  ]);
   if (error) return aviso(`No se pudieron cargar los lotes: ${error.message}`, true);
+  // Sin la tabla "ajustes" (falta ejecutar supabase/ajustes.sql) se muestra la tarifa de js/config.js, sin poder guardarla
+  tarifaEditable = !ajustes.error && !!ajustes.data;
+  if (tarifaEditable) precioVara = Number(ajustes.data.precio_vara);
   lotes = data;
+  pintarTarifa();
   pintar();
 }
+
+// ---------- Tarifa general (precio por vara²) ----------
+const dinero = n => `${CONFIG.moneda} ${Number(n).toLocaleString('es-HN', { maximumFractionDigits: 0 })}`;
+let precioVara = CONFIG.precioVara, tarifaEditable = false;
+
+document.querySelectorAll('.tarifa .moneda').forEach(m => { m.textContent = CONFIG.moneda; });
+
+function pintarTarifa() {
+  const form = $('tarifa'), sinPrecio = lotes.filter(l => l.precio == null).length;
+  form.precio_vara.value = precioVara;
+  form.precio_vara.disabled = form.querySelector('button').disabled = !tarifaEditable;
+  $('tarifa-nota').textContent = tarifaEditable
+    ? `Se usa en los ${sinPrecio} lotes sin precio propio. El mapa la toma al recargar.`
+    : 'Para editarla, ejecuta supabase/ajustes.sql en el SQL Editor de Supabase.';
+}
+
+// Placeholder del precio de cada lote: el precio automático con la tarifa actual
+const precioAuto = lote => `Automático: ≈ ${dinero(Math.round(lote.area_vrs2 * precioVara))}`;
+function actualizarPlaceholders() {
+  document.querySelectorAll('#lotes .lote').forEach(li => {
+    const lote = lotes.find(l => l.id === li.dataset.id);
+    if (lote) li.querySelector('input[name=precio]').placeholder = precioAuto(lote);
+  });
+}
+
+$('tarifa').addEventListener('submit', async e => {
+  e.preventDefault();
+  const form = e.target, boton = form.querySelector('button'), valor = Number(form.precio_vara.value);
+  if (!(valor > 0)) return aviso('La tarifa debe ser mayor que cero.', true);
+  boton.disabled = true;
+  const { data, error } = await sb.from('ajustes').update({ precio_vara: valor }).eq('id', 1).select('precio_vara').single();
+  boton.disabled = false;
+  if (error) return aviso(`No se guardó la tarifa: ${error.message}`, true);
+  precioVara = Number(data.precio_vara);
+  aviso(`Tarifa guardada: ${dinero(precioVara)} por vara²`);
+  pintarTarifa();
+  actualizarPlaceholders();
+});
 
 function pintar() {
   const lista = $('lotes');
@@ -79,6 +124,7 @@ function fila(lote) {
   const li = $('tpl-lote').content.firstElementChild.cloneNode(true);
   const toggle = li.querySelector('.lote-toggle'), body = li.querySelector('.lote-body'), estado = li.querySelector('.estado');
   li.dataset.estado = lote.estado;
+  li.dataset.id = lote.id;
   li.querySelector('.lote-id').textContent = lote.id;
   li.querySelector('.lote-area').textContent = `${fmt(lote.area_m2)} m² · ${fmt(lote.area_vrs2)} vrs²`;
   li.querySelector('.moneda').textContent = CONFIG.moneda;
@@ -97,6 +143,7 @@ function fila(lote) {
   });
 
   body.precio.value = lote.precio ?? '';
+  body.precio.placeholder = precioAuto(lote); // vacío = precio automático con la tarifa general
   body.medidas.value = lote.medidas ?? '';
   body.descripcion.value = lote.descripcion;
   body.addEventListener('submit', async e => {

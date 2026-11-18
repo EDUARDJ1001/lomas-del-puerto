@@ -19,3 +19,20 @@ window.cargarInventario = async function () {
   }
   return fetch('data/inventario.json').then(r => r.json());
 };
+
+// Tarifa por vara² (lotes sin precio propio): se edita en /admin y se guarda en la tabla "ajustes" de Supabase.
+// Sin Supabase, o si falla o la tabla aún no existe, queda la de js/config.js (SITIO.precioVara).
+window.cargarAjustes = async function () {
+  const sb = window.SITIO.supabase;
+  if (!(sb && sb.url && sb.anonKey)) return;
+  try {
+    const r = await fetch(`${sb.url}/rest/v1/ajustes?select=precio_vara&id=eq.1`, {
+      headers: { apikey: sb.anonKey, authorization: `Bearer ${sb.anonKey}` },
+    });
+    if (!r.ok) throw new Error(`Supabase ${r.status}`);
+    const [fila] = await r.json();
+    if (fila && Number(fila.precio_vara) > 0) window.SITIO.precioVara = Number(fila.precio_vara);
+  } catch (e) {
+    console.warn('Tarifa desde Supabase no disponible, se usa la de js/config.js', e);
+  }
+};

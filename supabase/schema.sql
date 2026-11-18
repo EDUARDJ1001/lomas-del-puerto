@@ -85,3 +85,27 @@ create policy "fotos: reemplazar (administradores)" on storage.objects
 drop policy if exists "fotos: borrar (administradores)" on storage.objects;
 create policy "fotos: borrar (administradores)" on storage.objects
   for delete to authenticated using (bucket_id = 'fotos' and public.es_admin());
+
+-- Tarifa general (precio por vara²): lo mismo que supabase/ajustes.sql
+create table if not exists public.ajustes (
+  id          int primary key default 1 check (id = 1),
+  precio_vara numeric(12, 2) not null default 950 check (precio_vara > 0),
+  updated_at  timestamptz not null default now()
+);
+insert into public.ajustes (id) values (1) on conflict (id) do nothing;
+
+drop trigger if exists ajustes_updated_at on public.ajustes;
+create trigger ajustes_updated_at before update on public.ajustes
+  for each row execute function public.tocar_updated_at();
+
+-- Cualquiera puede leer; solo los administradores pueden cambiarla
+alter table public.ajustes enable row level security;
+drop policy if exists "ajustes: lectura pública" on public.ajustes;
+create policy "ajustes: lectura pública" on public.ajustes
+  for select to anon, authenticated using (true);
+drop policy if exists "ajustes: edición de administradores" on public.ajustes;
+create policy "ajustes: edición de administradores" on public.ajustes
+  for update to authenticated using (public.es_admin()) with check (public.es_admin());
+
+grant select on public.ajustes to anon, authenticated;
+grant update on public.ajustes to authenticated;

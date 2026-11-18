@@ -42,6 +42,17 @@
     </section>
 
     <section id="editor" hidden>
+      <!-- Tarifa general: precio por vara² de los lotes sin precio propio (tabla "ajustes") -->
+      <form class="tarifa" id="tarifa">
+        <div class="tarifa-texto">
+          <h2>Tarifa general</h2>
+          <p id="tarifa-nota">Precio por vara² de los lotes sin precio propio.</p>
+        </div>
+        <label><span>Precio por vara² (<span class="moneda"></span>)</span>
+          <input name="precio_vara" type="number" min="0.01" step="0.01" inputmode="decimal" required>
+        </label>
+        <button class="btn" type="submit">Guardar tarifa</button>
+      </form>
       <div class="toolbar">
         <div class="filters" id="filtros">
           <button class="chip active" data-bloque="">Todos</button>

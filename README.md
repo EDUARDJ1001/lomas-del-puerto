@@ -70,7 +70,7 @@ Cada lote se identifica como `BLOQUE-NÚMERO` (por ejemplo `A-7`):
 ```
 
 - `estado`: `disponible` (verde, se puede abrir), `reservado` (naranja, con la palabra "Reservado"), `vendido` (rojo, con la palabra "Vendido") o `no_disponible` (gris claro, con "No disponible": aún no está a la venta; de momento, todo el lado 2). Solo los disponibles abren ficha.
-- `precio`: número, o `null` para mostrar "A consultar".
+- `precio`: número propio del lote. Sin él, el mapa muestra un precio aproximado: `area_vrs2` × la tarifa general por vara² (ver "Tarifa general" más abajo).
 - `medidas`: opcional. Si no se pone, se muestran las medidas calculadas del plano (solo en lotes de 4 lados).
 - `fotos`: rutas dentro de la carpeta `fotos/`. La primera es la portada.
 
@@ -85,6 +85,7 @@ Mientras `supabase` esté vacío en `js/config.js`, el sitio usa `data/inventari
    - el bucket público `fotos`.
 
    En una base que ya existía, volver a ejecutarlo agrega la columna `sector` (`'1B'` en el lado 2) y permite los locales (bloque `L`).
+   También crea la tabla `ajustes` (tarifa general). En una base que ya existía, basta con ejecutar `supabase/ajustes.sql` (se puede repetir).
 2. Ejecutar `supabase/seed.sql` (los 91 lotes de los dos lados). Se regenera con `node tools/seed-supabase.mjs` si cambia `data/inventario.json`.
 3. **Authentication → Sign In / Providers**: desactivar *Allow new users to sign up*.
 4. **Authentication → Users → Add user → Create new user**: crear la cuenta con correo y contraseña, y marcar *Auto Confirm User*. Después darle permiso de edición en el SQL Editor:
@@ -103,6 +104,12 @@ Al entrar con una cuenta de administrador se puede:
 - cambiar el estado de cada lote (se guarda al momento);
 - editar precio, medidas y descripción;
 - subir, ordenar y borrar fotos.
+
+#### Tarifa general
+
+Arriba de la lista de lotes está **Tarifa general**: el precio por vara² con el que el mapa calcula el precio aproximado de los lotes sin precio propio (ficha y cotizador). Se guarda en la tabla `ajustes` de Supabase (una sola fila) y el mapa la toma al recargar. En cada lote, el campo precio vacío muestra el precio automático ("Automático: ≈ L …").
+
+Si la tabla no existe todavía, el mapa usa `precioVara` de `js/config.js` (950) y en `/admin` la tarifa se ve pero no se puede editar: hay que ejecutar `supabase/ajustes.sql` en el SQL Editor.
 
 Las fotos se reducen a 1600 px antes de subirse y quedan en el bucket `fotos` (`A-7/…jpg`). Los cambios se ven en el mapa al recargar, sin hacer push.
 La geometría sigue en `data/lotes.json`.
