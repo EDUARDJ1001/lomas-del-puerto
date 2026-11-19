@@ -143,6 +143,15 @@
   const lotesTxt = ids => ids.length ? `<span class="lotes-txt">${esc(ids.join(', '))}</span>` : '<span class="mut">—</span>';
   const enlazar = (sel, fn) => vista.querySelectorAll(sel).forEach(el => el.addEventListener('click', () => fn(el.dataset.id)));
   const botonesDe = (map) => Object.entries(map).forEach(([id, fn]) => { const b = $(id); if (b) b.onclick = fn; });
+  // Desactiva el botón mientras se genera el PDF (la primera vez descarga la librería)
+  const conEspera = async (b, fn) => {
+    const antes = b.textContent;
+    b.disabled = true; b.textContent = 'Generando…';
+    try { await fn(); } finally { b.disabled = false; b.textContent = antes; }
+  };
+  // Último día de un mes "aaaa-mm", para pasar el filtro de mes al PDF
+  const rangoMes = mes => mes ? [`${mes}-01`, new Date(...mes.split('-').map(Number), 0).toLocaleDateString('en-CA')] : ['', ''];
+  const BTN_PDF = '<button class="btn btn-sm btn-outline" id="c-pdf-btn" title="Descargar en PDF">PDF</button>';
 
   // ---------- Secciones ----------
   const VISTAS = {
@@ -150,7 +159,7 @@
       const T = D.totales;
       const vencidos = D.clientes.filter(c => c.vencido > 0.5).sort((a, b) => b.vencido - a.vencido);
       const totalLotes = geom.length;
-      vista.innerHTML = cabecera('Resumen', `<button class="btn btn-sm" id="c-pago">Registrar pago</button><button class="btn btn-sm btn-outline" id="c-venta">Nueva venta</button>`) + `
+      vista.innerHTML = cabecera('Resumen', `<button class="btn btn-sm" id="c-pago">Registrar pago</button><button class="btn btn-sm btn-outline" id="c-venta">Nueva venta</button>${BTN_PDF}`) + `
         <div class="kpis">
           ${kpi('Saldo en banco', M(T.banco), `Saldo inicial ${M(D.saldoInicial)}`, 'principal')}
           ${kpi('Total vendido', M(T.vendido), `${T.lotesVendidos} de ${totalLotes} lotes`)}
@@ -162,6 +171,7 @@
         <div class="tarjeta"><h2>Cobros vencidos</h2>${vencidos.length ? tablaClientes(vencidos.slice(0, 8), true) : '<p class="mut">Nadie tiene cuotas vencidas sin pagar.</p>'}</div>
         <div class="tarjeta"><h2>Últimos pagos</h2>${tablaPagos(D.pagos.slice(0, 6), false)}</div>`;
       botonesDe({ 'c-pago': () => modalPago(), 'c-venta': () => modalVenta() });
+      $('c-pdf-btn').onclick = e => conEspera(e.target, () => exportarPdf('resumen'));
       enlazar('tr[data-cliente]', id => modalCuenta(id));
       enlazar('tr[data-pago]', id => modalPago(D.pagos.find(p => p.id === id)));
     },
@@ -232,7 +242,7 @@
     },
 
     pagos() {
-      vista.innerHTML = cabecera('Pagos recibidos', `<button class="btn btn-sm" id="c-nuevo">Registrar pago</button>`) + `
+      vista.innerHTML = cabecera('Pagos recibidos', `<button class="btn btn-sm" id="c-nuevo">Registrar pago</button>${BTN_PDF}`) + `
         <div class="filtro-bar"><input type="search" id="c-buscar" placeholder="Buscar cliente, forma o nota"><input type="month" id="c-mes" aria-label="Mes"></div><div id="c-tabla"></div>`;
       const pintarT = () => {
         const q = $('c-buscar').value.trim().toLowerCase(), mes = $('c-mes').value;
@@ -244,10 +254,11 @@
       $('c-buscar').oninput = $('c-mes').oninput = pintarT;
       pintarT();
       botonesDe({ 'c-nuevo': () => modalPago() });
+      $('c-pdf-btn').onclick = e => conEspera(e.target, () => exportarPdf('ingresos', ...rangoMes($('c-mes').value)));
     },
 
     gastos() {
-      vista.innerHTML = cabecera('Gastos', `<button class="btn btn-sm" id="c-nuevo">Registrar gasto</button>`) + `
+      vista.innerHTML = cabecera('Gastos', `<button class="btn btn-sm" id="c-nuevo">Registrar gasto</button>${BTN_PDF}`) + `
         <div class="filtro-bar"><input type="search" id="c-buscar" placeholder="Buscar descripción, categoría o nota"><input type="month" id="c-mes" aria-label="Mes"></div><div id="c-tabla"></div>`;
       const pintarT = () => {
         const q = $('c-buscar').value.trim().toLowerCase(), mes = $('c-mes').value;
@@ -265,6 +276,7 @@
       $('c-buscar').oninput = $('c-mes').oninput = pintarT;
       pintarT();
       botonesDe({ 'c-nuevo': () => modalGasto() });
+      $('c-pdf-btn').onclick = e => conEspera(e.target, () => exportarPdf('gastos', ...rangoMes($('c-mes').value)));
     },
 
     banco() {
@@ -303,6 +315,17 @@
 
     exportar() {
       vista.innerHTML = cabecera('Exportar') + `
+        <form class="tarjeta" id="c-pdf"><h2>Reportes en PDF</h2>
+          <p class="mut">Con el logo de Lomas del Puerto y la fecha y hora en que se emite. Deja las fechas vacías para incluir todo.</p>
+          <div class="campos" style="margin-top:12px">
+            <label><span>Desde</span><input type="date" name="desde"></label>
+            <label><span>Hasta</span><input type="date" name="hasta"></label>
+          </div>
+          <div class="acciones" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+            <button class="btn btn-sm" type="button" data-pdf="resumen">Resumen general</button>
+            <button class="btn btn-sm" type="button" data-pdf="ingresos">Ingresos</button>
+            <button class="btn btn-sm" type="button" data-pdf="gastos">Gastos</button>
+          </div></form>
         <div class="tarjeta"><h2>Descargar en Excel (CSV)</h2>
           <p class="mut">Cada archivo se abre directamente con Excel o Google Sheets.</p>
           <div class="acciones" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
@@ -313,6 +336,8 @@
             <button class="btn btn-sm btn-outline" data-csv="banco">Banco</button>
           </div></div>`;
       vista.querySelectorAll('[data-csv]').forEach(b => b.addEventListener('click', () => exportar(b.dataset.csv)));
+      const f = $('c-pdf');
+      f.querySelectorAll('[data-pdf]').forEach(b => b.addEventListener('click', () => conEspera(b, () => exportarPdf(b.dataset.pdf, f.desde.value, f.hasta.value))));
     },
   };
 
@@ -675,5 +700,163 @@
     });
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  // ---------- Reportes en PDF (jsPDF + AutoTable, se cargan solo al exportar) ----------
+  let libPdf = null;
+  const cargarScript = src => new Promise((ok, mal) => document.head.append(Object.assign(document.createElement('script'),
+    { src, onload: ok, onerror: () => mal(new Error('sin conexión con la librería de PDF')) })));
+  const prepararPdf = () => libPdf ||= (async () => {
+    if (!window.jspdf) {
+      await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+    }
+    // El logo es WebP: se pasa a PNG con fondo blanco, que es lo que entiende jsPDF
+    const img = await new Promise((ok, mal) => Object.assign(new Image(),
+      { onload: e => ok(e.target), onerror: () => mal(new Error('no se encontró el logo')), src: 'img/logo-completo.webp' }));
+    const cv = Object.assign(document.createElement('canvas'), { width: 600, height: Math.round(600 * img.naturalHeight / img.naturalWidth) });
+    const cx = cv.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+    cx.drawImage(img, 0, 0, cv.width, cv.height);
+    return { jsPDF: window.jspdf.jsPDF, logo: cv.toDataURL('image/png'), proporcion: cv.height / cv.width };
+  })().catch(e => { libPdf = null; throw e; });
+
+  // Las fuentes básicas del PDF no tienen los espacios finos que usa toLocaleString ("10:32 a. m.") ni el signo menos
+  const txt = s => String(s ?? '').replace(/[   ]/g, ' ').replace(/−/g, '-');
+  const enPeriodo = (f, desde, hasta) => (!desde && !hasta) || (f && (!desde || f >= desde) && (!hasta || f <= hasta));
+  const textoPeriodo = (desde, hasta) => desde && hasta ? `Del ${fecha(desde)} al ${fecha(hasta)}` : desde ? `Desde el ${fecha(desde)}` : hasta ? `Hasta el ${fecha(hasta)}` : 'Todos los registros';
+  const porCategoria = gs => [...gs.reduce((m, g) => m.set(g.categoria || 'Sin categoría', (m.get(g.categoria || 'Sin categoría') || 0) + Number(g.monto)), new Map())]
+    .sort((a, b) => b[1] - a[1]);
+
+  async function exportarPdf(tipo, desde = '', hasta = '') {
+    if (desde && hasta && desde > hasta) [desde, hasta] = [hasta, desde];
+    let lib;
+    try { lib = await prepararPdf(); } catch (e) { return aviso(`No se pudo generar el PDF: ${e.message}`, true); }
+    const doc = new lib.jsPDF({ unit: 'mm', format: 'letter' });
+    const ANCHO = doc.internal.pageSize.getWidth(), ALTO = doc.internal.pageSize.getHeight(), MARGEN = 15;
+    const VERDE = [30, 91, 60], GRIS = [93, 101, 103];
+    const titulo = { resumen: 'Resumen general', ingresos: 'Reporte de ingresos', gastos: 'Reporte de gastos' }[tipo];
+    const emitido = txt(new Date().toLocaleString('es-HN', { dateStyle: 'long', timeStyle: 'short' }));
+    const periodo = textoPeriodo(desde, hasta);
+    const ALTO_CAB = 36;
+
+    // Encabezado y pie en cada página
+    const cabeceraPdf = () => {
+      const anchoLogo = 34;
+      doc.addImage(lib.logo, 'PNG', MARGEN, 9, anchoLogo, anchoLogo * lib.proporcion);
+      doc.setTextColor(...VERDE).setFont('helvetica', 'bold').setFontSize(15).text(titulo, ANCHO - MARGEN, 15, { align: 'right' });
+      doc.setTextColor(...GRIS).setFont('helvetica', 'normal').setFontSize(9)
+        .text(`Emitido el ${emitido}`, ANCHO - MARGEN, 21, { align: 'right' })
+        .text(`Periodo: ${periodo}`, ANCHO - MARGEN, 26, { align: 'right' });
+      doc.setDrawColor(...VERDE).setLineWidth(0.6).line(MARGEN, ALTO_CAB - 4, ANCHO - MARGEN, ALTO_CAB - 4);
+    };
+    const pie = () => {
+      doc.setTextColor(...GRIS).setFont('helvetica', 'normal').setFontSize(8)
+        .text('Lomas del Puerto · Puerto Cortés · Documento de uso interno', MARGEN, ALTO - 8)
+        .text(`Página ${doc.internal.getCurrentPageInfo().pageNumber} de {total}`, ANCHO - MARGEN, ALTO - 8, { align: 'right' });
+    };
+    const decorar = { didDrawPage: () => { cabeceraPdf(); pie(); }, margin: { top: ALTO_CAB + 2, left: MARGEN, right: MARGEN, bottom: 16 } };
+    const estilo = {
+      theme: 'grid', styles: { font: 'helvetica', fontSize: 9, cellPadding: 2, lineColor: [211, 215, 218], lineWidth: 0.2, textColor: [35, 41, 43] },
+      headStyles: { fillColor: VERDE, textColor: 255, fontStyle: 'bold' },
+      footStyles: { fillColor: [227, 243, 232], textColor: [35, 41, 43], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [247, 248, 248] },
+    };
+    let y = ALTO_CAB + 2;
+    const seccionPdf = (nombre) => {
+      if (y > ALTO - 40) { doc.addPage(); y = ALTO_CAB + 2; }
+      doc.setTextColor(...VERDE).setFont('helvetica', 'bold').setFontSize(11).text(nombre, MARGEN, y + 5);
+      y += 8;
+    };
+    const tabla = (op) => {
+      // Encabezado y totales alineados como su columna (las cifras a la derecha)
+      const alinear = (f, conTamano) => f.map((c, i) => {
+        const col = op.columnStyles?.[i] || {};
+        return { content: txt(c), styles: { halign: col.halign || 'left', ...(conTamano && col.fontSize ? { fontSize: col.fontSize } : {}) } };
+      });
+      doc.autoTable({ ...estilo, ...decorar, startY: y, ...op,
+        head: op.head && [alinear(op.head)], body: op.body.map(f => f.map(txt)), foot: op.foot && [alinear(op.foot, true)] });
+      y = doc.lastAutoTable.finalY + 8;
+    };
+    const nota = (s) => {
+      doc.setTextColor(...GRIS).setFont('helvetica', 'italic').setFontSize(8.5).text(txt(s), MARGEN, y - 4);
+      y += 2;
+    };
+    // Cifras un poco más chicas y en una sola línea: "L 1,234,567.89" no se parte entre la L y el número
+    const der = { halign: 'right', fontSize: 8, cellWidth: 'wrap' };
+
+    const pagos = D.pagos.filter(p => enPeriodo(p.fecha, desde, hasta));
+    const gastos = D.gastos.filter(g => enPeriodo(g.fecha, desde, hasta));
+    const sinFecha = xs => (desde || hasta) ? xs.filter(x => !x.fecha).length : 0;
+    const suma = (xs) => r2(xs.reduce((s, x) => s + Number(x.monto), 0));
+    const ingresos = suma(pagos), egresos = suma(gastos);
+    const cuentaSinFecha = (xs, uno, varios) => { const n = sinFecha(xs); if (n) nota(`${plural(n, uno, varios)} sin fecha no ${n === 1 ? 'entra' : 'entran'} en el periodo.`); };
+
+    if (tipo === 'resumen') {
+      const T = D.totales;
+      seccionPdf(desde || hasta ? 'Movimientos del periodo' : 'Movimientos');
+      tabla({ head: ['Concepto', 'Monto'], columnStyles: { 1: der },
+        body: [['Ingresos (pagos de clientes)', M(ingresos)], ['Egresos (gastos)', M(egresos)]],
+        foot: ['Diferencia', M(ingresos - egresos)] });
+      cuentaSinFecha([...D.pagos, ...D.gastos], 'registro', 'registros');
+
+      seccionPdf(`Situación al ${fecha(hoy())}`);
+      tabla({ head: ['Indicador', 'Valor'], columnStyles: { 1: der }, body: [
+        ['Saldo inicial', M(D.saldoInicial)],
+        ['Saldo en banco (saldo inicial + ingresos − egresos)', M(T.banco)],
+        ['Total vendido', `${M(T.vendido)} (${T.lotesVendidos} de ${geom.length} lotes)`],
+        ['Cobrado a clientes', M(T.cobrado)],
+        ['Por cobrar', M(T.porCobrar)],
+        ['Saldo vencido', `${M(T.vencido)} (${plural(D.clientes.filter(c => c.vencido > 0.5).length, 'cliente', 'clientes')})`],
+      ] });
+
+      if (gastos.length) {
+        seccionPdf('Gastos por categoría');
+        tabla({ head: ['Categoría', 'Monto'], columnStyles: { 1: der }, body: porCategoria(gastos).map(([c, m]) => [c, M(m)]), foot: ['Total', M(egresos)] });
+      }
+
+      const cuentas = D.clientes.filter(c => c.ventas.length).sort((a, b) => b.vencido - a.vencido || b.saldo - a.saldo);
+      seccionPdf('Cuentas de clientes');
+      // Tabla ancha: la moneda va en el encabezado y no en cada cifra, para que quepan montos de millones
+      const mon = CONFIG.moneda;
+      tabla({ head: ['Cliente', 'Lotes', `Total (${mon})`, `Pagado (${mon})`, `Saldo (${mon})`, `Vencido (${mon})`, 'Estado'],
+        styles: { ...estilo.styles, fontSize: 8, cellPadding: 1.6 },
+        columnStyles: { 1: { cellWidth: 24 }, 2: der, 3: der, 4: der, 5: der },
+        body: cuentas.map(c => [c.nombre, c.lotes.join(', '), num(c.total), num(c.pagado), c.saldo < 0 ? `a favor ${num(-c.saldo)}` : num(c.saldo), num(c.vencido), ESTADOS[c.estado]]),
+        foot: [plural(cuentas.length, 'cliente', 'clientes'), '', num(cuentas.reduce((s, c) => s + c.total, 0)), num(cuentas.reduce((s, c) => s + c.pagado, 0)),
+          num(cuentas.reduce((s, c) => s + Math.max(0, c.saldo), 0)), num(cuentas.reduce((s, c) => s + c.vencido, 0)), ''] });
+    }
+
+    if (tipo === 'ingresos') {
+      seccionPdf('Pagos recibidos');
+      tabla({ head: ['Fecha', 'Cliente', 'Lotes', 'Forma', 'Nota', 'Monto'],
+        columnStyles: { 0: { cellWidth: 24 }, 2: { cellWidth: 30 }, 5: der },
+        body: pagos.length ? pagos.map(p => [p.fecha ? fecha(p.fecha) : 'Sin fecha', p.cliente?.nombre, (p.cliente?.lotes || []).join(', '), p.forma || '—', p.nota || '', M(p.monto)])
+          : [['', 'Sin pagos en este periodo.', '', '', '', '']],
+        foot: [plural(pagos.length, 'pago', 'pagos'), '', '', '', '', M(ingresos)] });
+      cuentaSinFecha(D.pagos, 'pago', 'pagos');
+      if (pagos.length) {
+        const formas = [...pagos.reduce((m, p) => m.set(p.forma || 'Sin indicar', (m.get(p.forma || 'Sin indicar') || 0) + Number(p.monto)), new Map())];
+        seccionPdf('Por forma de pago');
+        tabla({ head: ['Forma', 'Monto'], columnStyles: { 1: der }, body: formas.map(([f, m]) => [f, M(m)]), foot: ['Total', M(ingresos)] });
+      }
+    }
+
+    if (tipo === 'gastos') {
+      seccionPdf('Detalle de gastos');
+      tabla({ head: ['Fecha', 'Descripción', 'Categoría', 'Nota', 'Monto'],
+        columnStyles: { 0: { cellWidth: 24 }, 4: der },
+        body: gastos.length ? gastos.map(g => [g.fecha ? fecha(g.fecha) : 'Sin fecha', g.descripcion, g.categoria || '—', g.nota || '', M(g.monto)])
+          : [['', 'Sin gastos en este periodo.', '', '', '']],
+        foot: [plural(gastos.length, 'gasto', 'gastos'), '', '', '', M(egresos)] });
+      cuentaSinFecha(D.gastos, 'gasto', 'gastos');
+      if (gastos.length) {
+        seccionPdf('Por categoría');
+        tabla({ head: ['Categoría', 'Monto'], columnStyles: { 1: der }, body: porCategoria(gastos).map(([c, m]) => [c, M(m)]), foot: ['Total', M(egresos)] });
+      }
+    }
+
+    doc.putTotalPages('{total}');
+    doc.save(`lomas-${tipo}-${hoy()}.pdf`);
   }
 })();

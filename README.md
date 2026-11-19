@@ -123,7 +123,11 @@ Control privado de ventas, cobros y gastos. Solo las cuentas de administrador pu
 - **Resumen**: saldo en banco, total vendido, cobrado, por cobrar, saldo vencido y gastos.
 - **Plano de ventas**: el plano con cada lote coloreado según la cuenta de su comprador (pagado, al día, saldo vencido, sin precio, libre). Al tocar un lote se ve a quién se le vendió, el precio y cómo va su cuenta, y desde ahí se registra un pago o una venta.
 - **Cuentas por cobrar**, **Clientes**, **Ventas**, **Pagos recibidos**, **Gastos** y **Banco** (saldo inicial más pagos menos gastos).
-- **Exportar**: archivos CSV que se abren con Excel.
+- **Exportar**:
+  - Reportes en PDF: **Resumen general**, **Ingresos** y **Gastos**, con el logo y la fecha y hora de emisión. Se puede limitar a un periodo (desde / hasta); los registros sin fecha solo entran sin periodo.
+  - Archivos CSV que se abren con Excel.
+
+  Resumen, Pagos recibidos y Gastos también tienen un botón **PDF**; en Pagos y Gastos usa el mes filtrado. La librería del PDF (jsPDF) se descarga de cdnjs la primera vez que se usa.
 
 Cada venta es un acuerdo con un cliente por uno o varios lotes. Cada lote lleva su propio precio, por vara² o fijo:
 
