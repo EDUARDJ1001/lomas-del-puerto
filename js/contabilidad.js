@@ -795,9 +795,14 @@
     if (tipo === 'resumen') {
       const T = D.totales;
       seccionPdf(desde || hasta ? 'Movimientos del periodo' : 'Movimientos');
+      // Saldo al empezar el periodo: el saldo inicial más los movimientos con fecha anteriores a "desde"
+      const antes = desde
+        ? r2(D.saldoInicial + D.pagos.filter(p => p.fecha && p.fecha < desde).reduce((s, p) => s + Number(p.monto), 0)
+          - D.gastos.filter(g => g.fecha && g.fecha < desde).reduce((s, g) => s + Number(g.monto), 0))
+        : D.saldoInicial;
       tabla({ head: ['Concepto', 'Monto'], columnStyles: { 1: der },
-        body: [['Ingresos (pagos de clientes)', M(ingresos)], ['Egresos (gastos)', M(egresos)]],
-        foot: ['Diferencia', M(ingresos - egresos)] });
+        body: [[desde ? `Saldo al ${fecha(desde)}` : 'Saldo inicial', M(antes)], ['Ingresos (pagos de clientes)', M(ingresos)], ['Egresos (gastos)', M(egresos)]],
+        foot: ['Saldo Total En Banco', M(antes + ingresos - egresos)] });
       cuentaSinFecha([...D.pagos, ...D.gastos], 'registro', 'registros');
 
       seccionPdf(`Situación al ${fecha(hoy())}`);
@@ -819,12 +824,12 @@
       seccionPdf('Cuentas de clientes');
       // Tabla ancha: la moneda va en el encabezado y no en cada cifra, para que quepan montos de millones
       const mon = CONFIG.moneda;
-      tabla({ head: ['Cliente', 'Lotes', `Total (${mon})`, `Pagado (${mon})`, `Saldo (${mon})`, `Vencido (${mon})`, 'Estado'],
+      tabla({ head: ['Cliente', 'Lotes', `Total Venta (${mon})`, `Pagado (${mon})`, `Saldo (${mon})`, 'Estado'],
         styles: { ...estilo.styles, fontSize: 8, cellPadding: 1.6 },
-        columnStyles: { 1: { cellWidth: 24 }, 2: der, 3: der, 4: der, 5: der },
-        body: cuentas.map(c => [c.nombre, c.lotes.join(', '), num(c.total), num(c.pagado), c.saldo < 0 ? `a favor ${num(-c.saldo)}` : num(c.saldo), num(c.vencido), ESTADOS[c.estado]]),
+        columnStyles: { 1: { cellWidth: 24 }, 2: der, 3: der, 4: der },
+        body: cuentas.map(c => [c.nombre, c.lotes.join(', '), num(c.total), num(c.pagado), c.saldo < 0 ? `a favor ${num(-c.saldo)}` : num(c.saldo), ESTADOS[c.estado]]),
         foot: [plural(cuentas.length, 'cliente', 'clientes'), '', num(cuentas.reduce((s, c) => s + c.total, 0)), num(cuentas.reduce((s, c) => s + c.pagado, 0)),
-          num(cuentas.reduce((s, c) => s + Math.max(0, c.saldo), 0)), num(cuentas.reduce((s, c) => s + c.vencido, 0)), ''] });
+          num(cuentas.reduce((s, c) => s + Math.max(0, c.saldo), 0)), ''] });
     }
 
     if (tipo === 'ingresos') {
