@@ -99,7 +99,9 @@ Las contraseñas las guarda Supabase Auth, cifradas, en `auth.users`. La tabla `
 
 ### Panel de administración — `/admin`
 
-Al entrar con una cuenta de administrador se puede:
+Tiene una barra lateral (en celular, un menú ☰) con dos partes: **Disponibilidad** y **Contabilidad**. Cada sección tiene su propia dirección (`/admin#contabilidad/pagos`), pero basta con entrar a `/admin`.
+
+En **Disponibilidad** se puede:
 
 - cambiar el estado de cada lote (se guarda al momento);
 - editar precio, medidas y descripción;
@@ -113,6 +115,34 @@ Si la tabla no existe todavía, el mapa usa `precioVara` de `js/config.js` (950)
 
 Las fotos se reducen a 1600 px antes de subirse y quedan en el bucket `fotos` (`A-7/…jpg`). Los cambios se ven en el mapa al recargar, sin hacer push.
 La geometría sigue en `data/lotes.json`.
+
+#### Contabilidad
+
+Control privado de ventas, cobros y gastos. Solo las cuentas de administrador pueden leer estas tablas; el mapa público nunca ve nombres ni montos.
+
+- **Resumen**: saldo en banco, total vendido, cobrado, por cobrar, saldo vencido y gastos.
+- **Plano de ventas**: el plano con cada lote coloreado según la cuenta de su comprador (pagado, al día, saldo vencido, sin precio, libre). Al tocar un lote se ve a quién se le vendió, el precio y cómo va su cuenta, y desde ahí se registra un pago o una venta.
+- **Cuentas por cobrar**, **Clientes**, **Ventas**, **Pagos recibidos**, **Gastos** y **Banco** (saldo inicial más pagos menos gastos).
+- **Exportar**: archivos CSV que se abren con Excel.
+
+Cada venta es un acuerdo con un cliente por uno o varios lotes. Cada lote lleva su propio precio, por vara² o fijo:
+
+- **Contado**: se debe el total desde la fecha de la venta.
+- **Prima y cuotas**: se debe la prima más las cuotas mensuales ya vencidas desde la fecha de la primera cuota. La cuota es (total − prima) ÷ meses, salvo que se escriba otra.
+
+Los pagos se abonan a la cuenta del cliente, sumando todas sus ventas. "Saldo vencido" es lo que ya debería haber pagado y no ha pagado.
+
+Al registrar una venta, sus lotes pasan a "vendido" en el mapa público (se puede desmarcar). Al eliminarla, el panel pregunta si se vuelven a marcar como disponibles.
+
+**Instalar en una base que ya existe**: ejecutar `supabase/contabilidad.sql` en el SQL Editor, después de `supabase/ajustes.sql`. Se puede repetir sin perder datos.
+
+**Importar el control anterior** (el HTML con los datos de clientes, lotes, pagos y gastos), una sola vez:
+
+```bash
+node tools/importar-control.mjs pdfdata/control_lotes.html
+```
+
+Genera `pdfdata/importar-control.sql`, que queda fuera del repositorio porque lleva nombres y montos. Se pega en el SQL Editor y no hace nada si ya hay clientes cargados. Cada cliente queda con una venta de contado con todos sus lotes y su precio por vara². Los pagos acumulados quedan como un pago sin fecha. Después se completan la prima, los meses y las fechas de quienes pagan a plazos.
 
 ## Compartir un lote — `/lote/A-1`
 

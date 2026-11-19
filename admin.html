@@ -12,10 +12,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
   <header class="bar">
+    <button class="menu-btn" id="btn-menu" type="button" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false" hidden>☰</button>
     <a href="./" class="logo">Lomas del Puerto</a>
     <span class="bar-title">Administración</span>
     <button class="link" id="btn-salir" hidden>Cerrar sesión</button>
@@ -41,33 +43,56 @@
       <p>Esta cuenta no está registrada como administrador.</p>
     </section>
 
-    <section id="editor" hidden>
-      <!-- Tarifa general: precio por vara² de los lotes sin precio propio (tabla "ajustes") -->
-      <form class="tarifa" id="tarifa">
-        <div class="tarifa-texto">
-          <h2>Tarifa general</h2>
-          <p id="tarifa-nota">Precio por vara² de los lotes sin precio propio.</p>
+    <!-- Panel: barra lateral con Disponibilidad (estado de los lotes en el mapa público) y Contabilidad (privada) -->
+    <div class="layout" id="editor" hidden>
+      <nav class="sidebar" id="sidebar" aria-label="Secciones">
+        <p class="side-grupo">Disponibilidad</p>
+        <a href="#disponibilidad" data-vista="disponibilidad">Lotes y precios</a>
+        <p class="side-grupo">Contabilidad</p>
+        <a href="#contabilidad/resumen" data-vista="contabilidad/resumen">Resumen</a>
+        <a href="#contabilidad/plano" data-vista="contabilidad/plano">Plano de ventas</a>
+        <a href="#contabilidad/cobrar" data-vista="contabilidad/cobrar">Cuentas por cobrar</a>
+        <a href="#contabilidad/clientes" data-vista="contabilidad/clientes">Clientes</a>
+        <a href="#contabilidad/ventas" data-vista="contabilidad/ventas">Ventas</a>
+        <a href="#contabilidad/pagos" data-vista="contabilidad/pagos">Pagos recibidos</a>
+        <a href="#contabilidad/gastos" data-vista="contabilidad/gastos">Gastos</a>
+        <a href="#contabilidad/banco" data-vista="contabilidad/banco">Banco</a>
+        <a href="#contabilidad/exportar" data-vista="contabilidad/exportar">Exportar</a>
+      </nav>
+      <div class="side-fondo" id="side-fondo" hidden></div>
+
+      <section class="vista" id="vista-disponibilidad">
+        <!-- Tarifa general: precio por vara² de los lotes sin precio propio (tabla "ajustes") -->
+        <form class="tarifa" id="tarifa">
+          <div class="tarifa-texto">
+            <h2>Tarifa general</h2>
+            <p id="tarifa-nota">Precio por vara² de los lotes sin precio propio.</p>
+          </div>
+          <label><span>Precio por vara² (<span class="moneda"></span>)</span>
+            <input name="precio_vara" type="number" min="0.01" step="0.01" inputmode="decimal" required>
+          </label>
+          <button class="btn" type="submit">Guardar tarifa</button>
+        </form>
+        <div class="toolbar">
+          <div class="filters" id="filtros">
+            <button class="chip active" data-bloque="">Todos</button>
+            <button class="chip" data-bloque="A">Bloque A</button>
+            <button class="chip" data-bloque="B">Bloque B</button>
+            <button class="chip" data-bloque="C">Bloque C</button>
+            <button class="chip" data-bloque="1B">Polígono 1B</button>
+          </div>
+          <p class="resumen" id="resumen"></p>
         </div>
-        <label><span>Precio por vara² (<span class="moneda"></span>)</span>
-          <input name="precio_vara" type="number" min="0.01" step="0.01" inputmode="decimal" required>
-        </label>
-        <button class="btn" type="submit">Guardar tarifa</button>
-      </form>
-      <div class="toolbar">
-        <div class="filters" id="filtros">
-          <button class="chip active" data-bloque="">Todos</button>
-          <button class="chip" data-bloque="A">Bloque A</button>
-          <button class="chip" data-bloque="B">Bloque B</button>
-          <button class="chip" data-bloque="C">Bloque C</button>
-          <button class="chip" data-bloque="1B">Polígono 1B</button>
-        </div>
-        <p class="resumen" id="resumen"></p>
-      </div>
-      <ul class="lotes" id="lotes"></ul>
-    </section>
+        <ul class="lotes" id="lotes"></ul>
+      </section>
+
+      <!-- Contabilidad: la dibuja js/contabilidad.js según la sección elegida -->
+      <section class="vista conta" id="vista-contabilidad" hidden></section>
+    </div>
   </main>
 
   <div class="toast" id="toast" hidden></div>
+  <dialog class="modal" id="modal"></dialog>
 
   <template id="tpl-lote">
     <li class="lote">
@@ -99,6 +124,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="js/admin.js"></script>
+  <script src="js/contabilidad.js"></script>
 </body>
 </html>

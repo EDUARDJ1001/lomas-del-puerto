@@ -27,12 +27,42 @@ async function entrar(session) {
   if (session?.user.id === sesionActual) return; // onAuthStateChange también avisa al cargar
   sesionActual = session?.user.id || null;
   $('btn-salir').hidden = !session;
+  $('btn-menu').hidden = true;
   if (!session) return mostrar('login');
   const { data: esAdmin } = await sb.rpc('es_admin');
   if (!esAdmin) return mostrar('sin-permiso');
   mostrar('editor');
+  $('btn-menu').hidden = false;
   await cargar();
+  irA();
 }
+
+// ---------- Secciones (barra lateral): #disponibilidad, #contabilidad/resumen, #contabilidad/pagos… ----------
+function irA() {
+  let vista = location.hash.slice(1) || 'disponibilidad';
+  if (!document.querySelector(`#sidebar a[data-vista="${vista}"]`)) vista = 'disponibilidad';
+  const conta = vista.startsWith('contabilidad/');
+  $('vista-disponibilidad').hidden = conta;
+  $('vista-contabilidad').hidden = !conta;
+  document.querySelectorAll('#sidebar a').forEach(a => {
+    const on = a.dataset.vista === vista;
+    a.classList.toggle('on', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  menu(false);
+  window.scrollTo(0, 0);
+  if (conta) window.abrirContabilidad(vista.split('/')[1]); // js/contabilidad.js
+}
+window.addEventListener('hashchange', () => { if (!$('editor').hidden) irA(); });
+
+// En celular la barra lateral es un menú que se abre con ☰
+function menu(abrir) {
+  $('sidebar').classList.toggle('abierta', abrir);
+  $('side-fondo').hidden = !abrir;
+  $('btn-menu').setAttribute('aria-expanded', abrir);
+}
+$('btn-menu').addEventListener('click', () => menu(!$('sidebar').classList.contains('abierta')));
+$('side-fondo').addEventListener('click', () => menu(false));
 
 $('login').addEventListener('submit', async e => {
   e.preventDefault();
