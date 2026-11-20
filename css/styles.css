@@ -113,6 +113,44 @@ body { background: var(--bg); display: flex; flex-direction: column; height: 100
 .map-tools button + button { border-top: 1px solid var(--line); }
 .map-tools button:hover { background: var(--bg); }
 
+/* Mi ubicación: botón (gris apagado, azul activo, azul lleno siguiendo el punto), punto azul y lote donde se está */
+.map-tools .gps-btn { display: grid; place-items: center; color: var(--muted); }
+.gps-btn[data-estado="activo"] { color: #1a73e8; }
+.gps-btn[data-estado="siguiendo"] { color: #fff; background: #1a73e8; }
+.gps-btn[data-estado="siguiendo"]:hover { background: #1765cc; }
+.gps-btn[data-estado="buscando"] { color: #1a73e8; animation: gps-buscando 1s ease-in-out infinite alternate; }
+@keyframes gps-buscando { from { opacity: 1; } to { opacity: .35; } }
+
+.gps-precision { fill: #1a73e8; fill-opacity: .12; stroke: #1a73e8; stroke-opacity: .35; stroke-width: 1; }
+.gps-punto b {
+  position: absolute; inset: 2px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .35);
+}
+.gps-punto b::after { /* pulso */
+  content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid #1a73e8;
+  animation: gps-pulso 2s ease-out infinite;
+}
+@keyframes gps-pulso { from { transform: scale(1); opacity: .8; } to { transform: scale(2.6); opacity: 0; } }
+.gps-punto .rumbo { /* cono hacia donde se camina */
+  display: none; position: absolute; left: 50%; top: 50%; width: 0; height: 0; margin: -30px 0 0 -11px;
+  border: 11px solid transparent; border-bottom: 20px solid rgba(26, 115, 232, .65); border-top: 0;
+  transform-origin: 50% 30px; transform: rotate(var(--rumbo, 0deg));
+}
+.gps-punto.con-rumbo .rumbo { display: block; }
+@media (prefers-reduced-motion: reduce) { .gps-punto b::after, .gps-btn[data-estado="buscando"] { animation: none; } }
+
+.lot.aqui { stroke: #1a73e8; stroke-width: 4; }
+
+.gps-estado {
+  position: absolute; left: 16px; right: 72px; bottom: 24px; z-index: 1000; max-width: 420px;
+  display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 10px 14px;
+  border: 0; border-left: 4px solid #1a73e8; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow);
+  font: inherit; color: var(--ink); cursor: default;
+}
+.gps-estado.clic { cursor: pointer; }
+.gps-estado b { font-size: .88rem; font-weight: 600; }
+.gps-estado span { font-size: .76rem; color: var(--muted); }
+
 .north {
   position: absolute; left: 16px; top: 16px; z-index: 1000; width: 40px; height: 48px; border-radius: 10px;
   background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column-reverse;

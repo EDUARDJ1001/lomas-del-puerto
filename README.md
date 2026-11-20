@@ -55,6 +55,14 @@ plano: { origen: [193.83, 179.34], lat: 15.812103, lng: -87.926960, rotacion: 86
 plano2: { origen: [216.4, 44.4], lat: 15.810837, lng: -87.926774, rotacion: 69.7 },
 ```
 
+### Mi ubicación
+
+El botón ◎ (arriba del + y −) pide permiso de ubicación y muestra un punto azul, con un círculo del margen de error del GPS, y una flecha hacia donde se camina. El lote donde está la persona se marca en azul y un aviso abajo dice "Estás en Lote 7 · Bloque B" ("Probablemente en…" si el margen de error llega al borde del lote). Al tocar el aviso se abre la ficha. Fuera de los lotes dice si se está en la calle o a cuántos metros o kilómetros queda el proyecto.
+
+- Primer toque: busca la ubicación y la sigue. Al mover el mapa con el dedo deja de seguirla; tocar el botón la vuelve a centrar, y otro toque la apaga.
+- Solo funciona con la página abierta y sobre HTTPS (Vercel). La ubicación no sale del teléfono.
+- La precisión depende del plano: si el punto cae corrido unos metros en el terreno, se ajusta `plano` (y `plano2`) en `js/config.js`.
+
 ## Editar lotes — `data/inventario.json`
 
 Cada lote se identifica como `BLOQUE-NÚMERO` (por ejemplo `A-7`):

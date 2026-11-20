@@ -32,12 +32,16 @@
         <button type="button" data-capa="satelite" aria-pressed="false">Satélite</button>
       </div>
       <div class="map-tools">
+        <button type="button" class="gps-btn" id="gps-btn" aria-label="Mi ubicación" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
         <button type="button" data-zoom="in" aria-label="Acercar">+</button>
         <button type="button" data-zoom="out" aria-label="Alejar">−</button>
         <button type="button" data-zoom="fit" aria-label="Ver todo">⤢</button>
       </div>
       <div class="north" aria-hidden="true">N<span>▲</span></div>
       <div class="tooltip" id="tooltip" hidden></div>
+      <button type="button" class="gps-estado" id="gps-estado" role="status" hidden></button>
     </section>
 
     <aside class="panel" id="panel" aria-live="polite" hidden>
