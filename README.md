@@ -2,7 +2,7 @@
 
 Mapa interactivo de los lotes de Barrio Lomas del Puerto, Puerto Cortés, en dos lados:
 
-- **Primer plano**: 53 lotes (bloques A, B y C), con ids `A-1` … `C-14`.
+- **Primer plano**: 61 lotes (bloques A, B y C), con ids `A-1` … `C-22`.
 - **Lado 2, polígono 1B**: 33 lotes (bloques A, B y C) y 5 locales comerciales, al suroeste de la punta sur del primero. Sus ids llevan delante el polígono, `1B-A-1` … `1B-C-10`, y los locales son `1B-L-1` … `1B-L-5`.
 
 ## Ver la web
@@ -71,7 +71,7 @@ Cada lote se identifica como `BLOQUE-NÚMERO` (por ejemplo `A-7`):
 
 - `estado`: `disponible` (verde, se puede abrir), `reservado` (naranja, con la palabra "Reservado"), `vendido` (rojo, con la palabra "Vendido") o `no_disponible` (gris claro, con "No disponible": aún no está a la venta; de momento, todo el lado 2). Solo los disponibles abren ficha.
 - `precio`: número propio del lote. Sin él, el mapa muestra un precio aproximado: `area_vrs2` × la tarifa general por vara² (ver "Tarifa general" más abajo).
-- `medidas`: opcional. Si no se pone, se muestran las medidas calculadas del plano (solo en lotes de 4 lados).
+- `medidas`: opcional. Si no se pone, se muestran las medidas de cada lado según las cotas del plano (o el largo medido en el dibujo donde no hay cota).
 - `fotos`: rutas dentro de la carpeta `fotos/`. La primera es la portada.
 
 ## Base de datos — Supabase (opcional)
@@ -86,7 +86,7 @@ Mientras `supabase` esté vacío en `js/config.js`, el sitio usa `data/inventari
 
    En una base que ya existía, volver a ejecutarlo agrega la columna `sector` (`'1B'` en el lado 2) y permite los locales (bloque `L`).
    También crea la tabla `ajustes` (tarifa general). En una base que ya existía, basta con ejecutar `supabase/ajustes.sql` (se puede repetir).
-2. Ejecutar `supabase/seed.sql` (los 91 lotes de los dos lados). Se regenera con `node tools/seed-supabase.mjs` si cambia `data/inventario.json`.
+2. Ejecutar `supabase/seed.sql` (los 99 lotes de los dos lados). Se regenera con `node tools/seed-supabase.mjs` si cambia `data/inventario.json`.
 3. **Authentication → Sign In / Providers**: desactivar *Allow new users to sign up*.
 4. **Authentication → Users → Add user → Create new user**: crear la cuenta con correo y contraseña, y marcar *Auto Confirm User*. Después darle permiso de edición en el SQL Editor:
    ```sql
@@ -163,7 +163,9 @@ node tools/og-lotes.mjs
 
 ## Regenerar la geometría desde el plano
 
-`data/lotes.json` y `data/plano-base.json` salen de `pdfdata/pdfimport.dxf` (PDFIMPORT del plano en AutoCAD).
+`data/lotes.json` y `data/plano-base.json` salen de `pdfdata/pdfimport-lado1-updt20nov.dxf` (PDFIMPORT del plano actualizado al 20 de noviembre de 2026, en AutoCAD). Se lleva al sistema de coordenadas del primer plano (`pdfimport.dxf`) para que `plano` en `js/config.js` siga valiendo. Las áreas salen de los rótulos del plano, y las medidas de los lados, de sus cotas.
+
+En una base que ya existía, ese cambio de plano se aplica una vez con `supabase/plano-20nov.sql`: renumera el bloque C (los antiguos C-8…C-14 pasan a C-16…C-22 con su estado y fotos), crea los lotes nuevos, agrega C-5 y C-6 a la venta de C-4 y actualiza las áreas.
 El lado 2 sale de `pdfdata/pdfimport-lado2.dxf` (`tools/extract-lado2.mjs`): sus lotes se agregan a `data/lotes.json`, y sus calles y área verde van a `data/plano-base-lado2.json`. La carpeta `pdfdata/` no se sube al repositorio porque contiene datos del terreno:
 
 ```bash
